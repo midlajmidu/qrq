@@ -1,0 +1,61 @@
+"""
+app/models/queue.py
+Queue model — one per service line within an organization.
+
+Design decisions:
+  - current_token_number is locked with SELECT FOR UPDATE during join/next
+    to guarantee atomic increment with zero duplicates under concurrency.
+  - prefix (e.g. "A", "B") lets orgs run labelled queues side-by-side.
+  - Unique(name, org_id) — same name is allowed in different orgs.
+"""
+import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base_class import Base
+
+
+class Queue(Base):
+    __tablename__ = "queues"
+
+    __table_args__ = (
+        UniqueConstraint("name", "org_id", name="uq_queue_name_org"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    org_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    prefix: Mapped[str] = mapped_column(String(10), nullable=False, default="A")
+    current_token_number: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    # ── Relationships ──────────────────────────────────────────────
+    tokens: Mapped[list["Token"]] = relationship(  # noqa: F821
+        "Token", back_populates="queue", lazy="noload"
+    )
+
+    def __repr__(self) -> str:
+        return f"<Queue id={self.id} name={self.name!r} org={self.org_id}>"

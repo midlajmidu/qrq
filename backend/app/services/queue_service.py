@@ -1,0 +1,127 @@
+"""
+app/services/queue_service.py
+Queue management business logic with strict multi-tenant enforcement.
+
+All methods receive org_id from the authenticated JWT — never from request body.
+"""
+import logging
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.queue import Queue
+from app.models.token import Token, TokenStatus
+from app.schemas.queue import QueueCreate, QueueResponse
+
+logger = logging.getLogger(__name__)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Queue CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def create_queue(
+    db: AsyncSession,
+    *,
+    org_id: uuid.UUID,
+    data: QueueCreate,
+) -> Queue:
+    """Create a new queue under the given org."""
+    queue = Queue(
+        org_id=org_id,
+        name=data.name,
+        prefix=data.prefix,
+    )
+    db.add(queue)
+    await db.commit()
+    await db.refresh(queue)
+    logger.info("Queue created | id=%s org=%s name=%r", queue.id, org_id, queue.name)
+    return queue
+
+
+async def list_queues(
+    db: AsyncSession,
+    *,
+    org_id: uuid.UUID,
+) -> list[Queue]:
+    """List all queues belonging to an org (tenant filtered)."""
+    result = await db.execute(
+        select(Queue)
+        .where(Queue.org_id == org_id)
+        .order_by(Queue.created_at.asc())
+    )
+    return list(result.scalars().all())
+
+
+async def get_queue_or_404(
+    db: AsyncSession,
+    *,
+    queue_id: uuid.UUID,
+    org_id: uuid.UUID,
+) -> Queue:
+    """
+    Fetch a queue by ID, scoped to org_id.
+    Raises ValueError (→ 404) if not found or belongs to different org.
+    """
+    result = await db.execute(
+        select(Queue).where(
+            Queue.id == queue_id,
+            Queue.org_id == org_id,     # ← TENANT ISOLATION
+        )
+    )
+    queue = result.scalar_one_or_none()
+    if queue is None:
+        raise ValueError(f"Queue {queue_id} not found")
+    return queue
+
+
+async def set_queue_active(
+    db: AsyncSession,
+    *,
+    queue_id: uuid.UUID,
+    org_id: uuid.UUID,
+    is_active: bool,
+) -> Queue:
+    queue = await get_queue_or_404(db, queue_id=queue_id, org_id=org_id)
+    queue.is_active = is_active
+    await db.commit()
+    await db.refresh(queue)
+    return queue
+
+async def delete_queue(
+    db: AsyncSession,
+    *,
+    queue_id: uuid.UUID,
+    org_id: uuid.UUID,
+) -> None:
+    """Delete a queue. Will cascade and delete tokens as well based on DB setup."""
+    queue = await get_queue_or_404(db, queue_id=queue_id, org_id=org_id)
+    await db.delete(queue)
+    await db.commit()
+    logger.info("Queue deleted | id=%s org=%s", queue_id, org_id)
+
+async def reset_queue(
+    db: AsyncSession,
+    *,
+    queue_id: uuid.UUID,
+    org_id: uuid.UUID,
+) -> Queue:
+    """Reset a queue."""
+    from sqlalchemy import delete
+    result = await db.execute(
+        select(Queue).where(
+            Queue.id == queue_id,
+            Queue.org_id == org_id,
+        ).with_for_update()
+    )
+    queue = result.scalar_one_or_none()
+    if queue is None:
+        raise ValueError(f"Queue {queue_id} not found")
+
+    await db.execute(delete(Token).where(Token.queue_id == queue_id))
+    queue.current_token_number = 0
+    await db.commit()
+    logger.info("Queue reset | id=%s org=%s", queue_id, org_id)
+    return queue

@@ -1,0 +1,76 @@
+# =============================================================================
+# Prometheus alerting rules for Queue Management SaaS
+# =============================================================================
+groups:
+  - name: queue_alerts
+    rules:
+      # ── Error rate ──────────────────────────────────────────────
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            / sum(rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate ({{ $value | humanizePercentage }})"
+          description: "More than 5% of requests are returning 5xx errors."
+
+      # ── Rate limiting ───────────────────────────────────────────
+      - alert: HighRateLimitHits
+        expr: rate(rate_limit_hits_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limit rejections"
+          description: "More than 10 rate limit hits per second sustained."
+
+      # ── DB pool exhaustion ──────────────────────────────────────
+      - alert: DBPoolExhaustion
+        expr: db_pool_checked_out / (db_pool_size + db_pool_overflow) > 0.9
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DB connection pool near exhaustion"
+          description: "90%+ of DB connections are in use."
+
+      # ── Redis disconnection loop ────────────────────────────────
+      - alert: RedisReconnectLoop
+        expr: increase(redis_reconnects_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis reconnection loop"
+          description: "More than 5 Redis reconnection attempts in 5 minutes."
+
+      # ── Memory ──────────────────────────────────────────────────
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / (1024 * 1024 * 1024) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage ({{ $value | humanize }}GB)"
+
+      # ── WebSocket connections ───────────────────────────────────
+      - alert: TooManyWebSockets
+        expr: sum(ws_active_connections) > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Too many WebSocket connections ({{ $value }})"
+
+      # ── Queue lock duration ─────────────────────────────────────
+      - alert: SlowQueueLock
+        expr: histogram_quantile(0.99, rate(queue_lock_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Queue lock duration >1s at p99"

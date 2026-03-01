@@ -1,0 +1,43 @@
+# ── Python ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Environment ───────────────────────────────────────
+.env
+.env.production
+.env.staging
+
+# ── IDE ───────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Docker ────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── Backups (stored externally) ───────────────────────
+/backups/
+*.sql.gz
+
+# ── Coverage ──────────────────────────────────────────
+htmlcov/
+.coverage
+.coverage.*
+
+# ── Secrets (NEVER commit) ───────────────────────────
+*.pem
+*.key
+*.crt
+ssl/
+secrets/

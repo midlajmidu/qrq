@@ -1,0 +1,66 @@
+"""
+app/models/user.py
+User model tied to a single Organization.
+
+CRITICAL tenant-isolation rules:
+  - email is unique PER org, NOT globally
+  - org_id must be indexed (all queries filter by it)
+  - password_hash is NEVER returned in responses
+  - role field is extensible (admin / staff / display)
+"""
+import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    String,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base_class import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    __table_args__ = (
+        # email is unique only within an organization
+        UniqueConstraint("email", "org_id", name="uq_user_email_org"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    org_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,           # mandatory: ALL queries filter by org_id
+    )
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # Role: admin | staff | display — no hardcoded checks here
+    role: Mapped[str] = mapped_column(String(50), default="admin", nullable=False)
+
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    # ── Relationships ──────────────────────────────────────────────
+    organization: Mapped["Organization"] = relationship(  # noqa: F821
+        "Organization", back_populates="users", lazy="noload"
+    )
+
+    def __repr__(self) -> str:
+        return f"<User id={self.id} email={self.email!r} org={self.org_id}>"
