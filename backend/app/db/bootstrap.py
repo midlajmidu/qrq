@@ -25,27 +25,18 @@ async def bootstrap_db() -> None:
         try:
             logger.info("Starting database bootstrap process...")
 
-            # 1. Create Default Organization
-            org = Organization(
-                name="FlowClinic",
-                slug="flowclinic",
-                is_active=True
-            )
-            session.add(org)
-            await session.flush()  # We need the generated org.id
-
-            # 2. Create Default Admin User
-            admin_user = User(
+            # Create Super Admin User (No organization attached)
+            super_admin = User(
                 email="admin@flowclinic.com",
                 password_hash=hash_password("Admin@123"),
-                role="admin",
+                role="super_admin",
                 is_active=True,
-                org_id=org.id
+                org_id=None
             )
-            session.add(admin_user)
+            session.add(super_admin)
             
             await session.commit()
-            logger.warning("⚠ Bootstrap admin created. Change password immediately.")
+            logger.warning("⚠ Bootstrap super_admin created. Change password immediately.")
             
         except Exception as e:
             await session.rollback()

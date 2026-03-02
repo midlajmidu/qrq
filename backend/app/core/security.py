@@ -39,7 +39,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(
     *,
     user_id: str,
-    org_id: str,
+    org_id: str | None,
     role: str,
     expires_delta: timedelta | None = None,
 ) -> str:
@@ -48,7 +48,7 @@ def create_access_token(
 
     Payload:
         sub     → user_id  (string)
-        org_id  → org_id   (string)
+        org_id  → org_id   (string) / nullable for super_admin
         role    → role      (string)
         exp     → UTC expiration
     """

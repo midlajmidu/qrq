@@ -64,26 +64,44 @@ async def get_current_user(
         raise _CREDENTIALS_EXCEPTION
 
     user_id_raw: str | None = payload.get("sub")
+    role_raw: str | None = payload.get("role")
     org_id_raw: str | None = payload.get("org_id")
 
-    if not user_id_raw or not org_id_raw:
-        logger.warning("Token missing sub or org_id claim")
+    if not user_id_raw or not role_raw:
+        logger.warning("Token missing sub or role claim")
         raise _CREDENTIALS_EXCEPTION
+        
+    if role_raw == "super_admin":
+        if org_id_raw is not None:
+            logger.warning("Super admin token provided with org_id")
+            raise _CREDENTIALS_EXCEPTION
+    else:
+        if org_id_raw is None:
+            logger.warning("Normal token missing org_id claim")
+            raise _CREDENTIALS_EXCEPTION
 
     # ── Parse UUIDs ────────────────────────────────────────────────
     try:
         user_id = uuid.UUID(user_id_raw)
-        org_id = uuid.UUID(org_id_raw)
+        org_id = uuid.UUID(org_id_raw) if org_id_raw else None
     except ValueError:
         raise _CREDENTIALS_EXCEPTION
 
     # ── Fetch user from DB (always fresh — catches deactivation) ───
-    result = await db.execute(
-        select(User).where(
-            User.id == user_id,
-            User.org_id == org_id,    # ← TENANT ISOLATION enforced
+    if org_id:
+        result = await db.execute(
+            select(User).where(
+                User.id == user_id,
+                User.org_id == org_id,    # ← TENANT ISOLATION enforced
+            )
         )
-    )
+    else:
+        result = await db.execute(
+            select(User).where(
+                User.id == user_id,
+                User.org_id.is_(None),    # ← Super admin case
+            )
+        )
     user: User | None = result.scalar_one_or_none()
 
     if user is None:
@@ -105,3 +123,20 @@ async def get_current_active_user(
     active-user dependency without the inline is_active check.
     """
     return current_user
+
+
+def require_super_admin() -> callable:
+    """
+    Dependency that enforces the user has the 'super_admin' role.
+    Usage:
+        user = Depends(require_super_admin())
+    """
+    async def dep(current_user: User = Depends(get_current_active_user)) -> User:
+        if current_user.role != "super_admin":
+            logger.warning("User %s attempted to access super_admin endpoint", current_user.id)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
+        return current_user
+    return dep
