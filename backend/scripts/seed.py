@@ -23,12 +23,15 @@ from app.core.security import hash_password
 ORGS = [
     {"name": "Acme Clinic",   "slug": "org-a"},
     {"name": "Beta Hospital", "slug": "org-b"},
+    {"name": "mj clinic", "slug": "org-c"}
+
 ]
 
 USERS = [
     {"email": "admin@acme.com",  "password": "password123", "org_slug": "org-a", "role": "admin"},
     {"email": "admin@acme.com",  "password": "password456", "org_slug": "org-b", "role": "admin"},
     {"email": "staff@acme.com",  "password": "staffpass1",  "org_slug": "org-a", "role": "staff"},
+    {"email": "midlajmidu910@gmail.com",  "password": "mj1234",  "org_slug": "org-c", "role": "admin"},
 
 ]
 

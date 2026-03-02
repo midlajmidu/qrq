@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import React, { use, useState, useEffect, useCallback, useRef } from "react";
 import { useQueueSocket } from "@/hooks/useQueueSocket";
 import type { RecentToken } from "@/types/api";
 
@@ -23,13 +23,67 @@ export default function DisplayQueuePage({ params }: PageProps) {
         .map((t: RecentToken) => t.token_number)
         .slice(0, 5);
 
+    // ── Audio Alert Logic ──
+    const [soundEnabled, setSoundEnabled] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const previousServingRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const enabled = localStorage.getItem("display_sound_enabled") === "true";
+            setSoundEnabled(enabled);
+
+            const audio = new Audio("/sounds/mixkit-confirmation-tone-2867.wav");
+            audio.preload = "auto";
+            audio.volume = 1.0;
+            audioRef.current = audio;
+        }
+    }, []);
+
+    const handleEnableSound = useCallback(() => {
+        if (audioRef.current) {
+            audioRef.current.play().then(() => {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                    audioRef.current.currentTime = 0;
+                }
+            }).catch(() => { /* ignore */ });
+        }
+
+        localStorage.setItem("display_sound_enabled", "true");
+        setSoundEnabled(true);
+    }, []);
+
+    useEffect(() => {
+        if (!state) return;
+
+        if (state.current_serving !== 0 && previousServingRef.current !== null && state.current_serving !== previousServingRef.current) {
+            if (soundEnabled && audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(() => {/* ignore autoplay block */ });
+            }
+        }
+
+        if (state.current_serving !== 0) {
+            previousServingRef.current = state.current_serving;
+        }
+    }, [state, soundEnabled]);
+
     // CSS key-based flash animation
     const servingKey = `serving-${serving}`;
 
     return (
         <main className="h-screen bg-gray-950 flex flex-col text-white overflow-hidden select-none" aria-label="Queue display">
-            {/* Connection indicator */}
-            <div className="absolute top-4 right-4 z-10" aria-live="polite">
+            {/* Connection & Auth Controls */}
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-3" aria-live="polite">
+                {!soundEnabled && (
+                    <button
+                        onClick={handleEnableSound}
+                        className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-blue-500/30 text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
+                    >
+                        Enable Sound
+                    </button>
+                )}
                 <div className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-colors ${status === "connected"
                     ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
                     : status === "reconnecting"

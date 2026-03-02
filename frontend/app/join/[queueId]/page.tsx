@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useCallback } from "react";
+import React, { use, useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useQueueSocket } from "@/hooks/useQueueSocket";
 import ConnectionBadge from "@/components/ConnectionBadge";
@@ -34,6 +34,37 @@ export default function JoinQueuePage({ params }: PageProps) {
     const [joinData, setJoinData] = useState<JoinResponse | null>(null);
     const [isJoining, setIsJoining] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [soundEnabled, setSoundEnabled] = useState(false);
+    const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
+    // Init Audio and check session storage on mount
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const enabled = sessionStorage.getItem("sound_enabled") === "true";
+            setSoundEnabled(enabled);
+
+            // Initialize audio object. It won't play until user interacts.
+            const audio = new Audio("/sounds/mixkit-confirmation-tone-2867.wav");
+            audio.preload = "auto";
+            audio.volume = 1.0;
+            audioRef.current = audio;
+        }
+    }, []);
+
+    const handleEnableSound = useCallback(() => {
+        if (audioRef.current) {
+            // Unlocking autoplay with a quick play/pause
+            audioRef.current.play().then(() => {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                    audioRef.current.currentTime = 0;
+                }
+            }).catch(() => { /* ignore */ });
+        }
+
+        sessionStorage.setItem("sound_enabled", "true");
+        setSoundEnabled(true);
+    }, []);
 
     // Restore from session on mount
     useEffect(() => {
@@ -49,25 +80,47 @@ export default function JoinQueuePage({ params }: PageProps) {
         const fetchStatus = async () => {
             if (!joinData?.token_number) return;
 
+            let newStatus: TokenStatus | null = null;
+
             // Check recent_tokens first
             if (live?.recent_tokens) {
                 const recent = live.recent_tokens.find((t: { token_number: number; status: TokenStatus }) => t.token_number === joinData.token_number);
                 if (recent) {
-                    if (mounted) setTokenStatus(recent.status);
-                    return;
+                    newStatus = recent.status;
                 }
             }
 
-            if (live?.current_serving === joinData.token_number) {
-                if (mounted) setTokenStatus("serving");
-                return;
+            if (!newStatus && live?.current_serving === joinData.token_number) {
+                newStatus = "serving";
             }
 
             try {
-                const res = await api.getPublicToken(queueId, joinData.token_number);
-                if (mounted) setTokenStatus(res.status);
+                if (!newStatus) {
+                    const res = await api.getPublicToken(queueId, joinData.token_number);
+                    newStatus = res.status;
+                }
             } catch (err) {
                 // ignore
+            }
+
+            if (newStatus && mounted) {
+                setTokenStatus(newStatus);
+
+                // --- Audio Alert Logic ---
+                if (typeof window !== "undefined") {
+                    const storageKey = `fc_audio_stage_${queueId}`;
+                    const lastStage = sessionStorage.getItem(storageKey);
+
+                    if (newStatus !== lastStage) {
+                        sessionStorage.setItem(storageKey, newStatus);
+
+                        // Play sound ONLY when transitioning into 'serving', and only if enabled
+                        if (newStatus === "serving" && lastStage !== "serving" && soundEnabled && audioRef.current) {
+                            audioRef.current.currentTime = 0;
+                            audioRef.current.play().catch(() => { /* Autoplay might still block if interaction was reset */ });
+                        }
+                    }
+                }
             }
         };
 
@@ -162,6 +215,15 @@ export default function JoinQueuePage({ params }: PageProps) {
                     {joinData ? (
                         /* Ticket Card */
                         <div className="space-y-4">
+                            {!soundEnabled && (
+                                <div className="bg-indigo-50 text-indigo-800 p-4 rounded-xl border border-indigo-200 text-center flex flex-col items-center gap-2">
+                                    <p className="text-sm font-medium">Want sound alerts when it&amp;s your turn?</p>
+                                    <button onClick={handleEnableSound} className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        Enable Sound Alerts
+                                    </button>
+                                </div>
+                            )}
+
                             {/* Status banner */}
                             {isMyTurn && (
                                 <div role="alert" className="bg-emerald-50 text-emerald-800 p-4 rounded-xl border-2 border-emerald-300 text-center font-bold text-lg animate-pulse">
