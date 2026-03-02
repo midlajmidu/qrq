@@ -1,0 +1,71 @@
+services:
+  # ─── Backend Service (FastAPI) ───────────────────────────────────
+  - type: web
+    name: queue-backend
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: Dockerfile
+    plan: free # Change to standard for better performance in production
+    region: singapore # Adjust based on your primary audience
+    
+    # Run database migrations before the new version goes live
+    preDeployCommand: "alembic upgrade head"
+    
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: queue-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: queue-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "*" # CRITICAL: Change this to your frontend domain after deploy for security
+      - key: APP_HOST
+        value: 0.0.0.0
+      - key: APP_PORT
+        value: 10000 # Default Render port
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+
+  # ─── Frontend Service (Next.js) ──────────────────────────────────
+  - type: web
+    name: queue-frontend
+    env: docker
+    dockerContext: ./frontend
+    dockerfilePath: Dockerfile
+    plan: free # Change to standard for better performance in production
+    region: singapore
+    envVars:
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: "https://CHANGE_THIS_TO_YOUR_BACKEND_URL.onrender.com/api/v1"
+      - key: NEXT_PUBLIC_WS_BASE_URL
+        value: "wss://CHANGE_THIS_TO_YOUR_BACKEND_URL.onrender.com/api/v1/ws"
+      - key: NEXT_PUBLIC_APP_NAME
+        value: FlowClinic
+      - key: INTERNAL_API_URL
+        fromService:
+          type: web
+          name: queue-backend
+          property: host
+    healthCheckPath: /
+
+# ─── Database ────────────────────────────────────────────────────
+databases:
+  - name: queue-db
+    plan: free
+    region: singapore
+
+# ─── Redis ───────────────────────────────────────────────────────
+redis:
+  - name: queue-redis
+    plan: free
+    region: singapore
+    ipAllowList: [] # Only allow internal connections
