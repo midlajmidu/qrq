@@ -28,4 +28,4 @@ EXPOSE 10000
 
 # Use gunicorn with uvicorn workers for production-grade concurrency
 # Binding to $PORT via sh -c to allow Render's dynamic port assignment
-CMD ["sh", "-c", "gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --keep-alive 5 --log-level info --access-logfile - --error-logfile -"]
+CMD ["sh", "-c", "alembic upgrade head && gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:$PORT"]
