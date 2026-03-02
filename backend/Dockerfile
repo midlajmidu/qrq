@@ -23,15 +23,9 @@ COPY . .
 RUN chown -R app:app /app
 USER app
 
-EXPOSE 8000
+# Expose the default port (Render will override this, but it's good practice)
+EXPOSE 10000
 
 # Use gunicorn with uvicorn workers for production-grade concurrency
-CMD ["gunicorn", "app.main:app", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--workers", "2", \
-     "--bind", "0.0.0.0:8000", \
-     "--timeout", "120", \
-     "--keep-alive", "5", \
-     "--log-level", "info", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-"]
+# Binding to $PORT via sh -c to allow Render's dynamic port assignment
+CMD ["sh", "-c", "gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --keep-alive 5 --log-level info --access-logfile - --error-logfile -"]

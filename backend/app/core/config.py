@@ -46,7 +46,7 @@ class Settings(BaseSettings):
 
     # ── Server ────────────────────────────────────────────────────
     APP_HOST: str = "0.0.0.0"
-    APP_PORT: int = 8000
+    APP_PORT: int = 10000
 
     model_config = SettingsConfigDict(
         env_file=".env",
