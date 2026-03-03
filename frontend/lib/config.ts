@@ -11,7 +11,7 @@ export const config = {
   // In the browser, we use a relative path so it goes through our Nginx proxy.
   apiBaseUrl: isServer
     ? (process.env.INTERNAL_API_URL || "http://backend:8000/api/v1")
-    : (process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1"),
+    : (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:80/api/v1"),
 
   wsBaseUrl: isServer
     ? "ws://backend:8000/api/v1/ws"
