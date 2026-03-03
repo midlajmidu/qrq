@@ -122,3 +122,65 @@ export interface ApiErrorResponse {
     detail: string;
     retryAfter?: number;
 }
+
+// ── Super Admin ──────────────────────────────────────────────────
+type SortBy = "name" | "created_at" | "is_active";
+type SortOrder = "asc" | "desc";
+
+export interface SuperAdminLoginRequest {
+    email: string;
+    password: string;
+}
+
+export interface OrgDetail {
+    id: string;
+    name: string;
+    slug: string;
+    is_active: boolean;
+    created_at: string;
+}
+
+export interface OrgDetailExtended extends OrgDetail {
+    total_users: number;
+    total_admins: number;
+}
+
+export interface OrgCreateRequest {
+    org_name: string;
+    org_slug: string;
+    admin_email: string;
+    admin_password: string;
+}
+
+export interface OrgUpdateRequest {
+    org_name: string;
+    org_slug: string;
+    is_active: boolean;
+}
+
+export interface OrgCreateResponse {
+    organization: OrgDetail;
+    admin_email: string;
+    message: string;
+}
+
+export interface PaginatedOrgsResponse {
+    items: OrgDetail[];
+    total: number;
+    limit: number;
+    offset: number;
+}
+
+export interface OrgStats {
+    total: number;
+    active: number;
+    inactive: number;
+}
+
+export interface ListOrgsParams {
+    search?: string;
+    limit?: number;
+    offset?: number;
+    sort_by?: SortBy;
+    sort_order?: SortOrder;
+}

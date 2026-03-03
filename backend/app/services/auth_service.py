@@ -91,3 +91,62 @@ async def authenticate_user(
 
     logger.info("Login successful | user_id=%s org=%s role=%s", user.id, org_slug, user.role)
     return token
+
+
+_SUPER_ADMIN_ORG_SLUG = "super-admin-system"
+
+
+async def authenticate_super_admin(
+    db: AsyncSession,
+    *,
+    email: str,
+    plain_password: str,
+) -> str:
+    """
+    Authenticate a super admin by email + password only.
+    Super admins live in the sentinel org with slug='super-admin-system'.
+    Raises ValueError on any failure (generic message to prevent enumeration).
+    """
+    logger.info("Super-admin login attempt | email=%s", email)
+
+    # Resolve the sentinel org
+    org_result = await db.execute(
+        select(Organization).where(Organization.slug == _SUPER_ADMIN_ORG_SLUG)
+    )
+    org: Organization | None = org_result.scalar_one_or_none()
+    if org is None or not org.is_active:
+        logger.warning("Super-admin login: sentinel org missing or inactive")
+        raise ValueError(_INVALID_CREDENTIALS)
+
+    # Find user in that org with role == super_admin
+    from sqlalchemy import and_
+    user_result = await db.execute(
+        select(User).where(
+            and_(
+                User.email == email,
+                User.org_id == org.id,
+                User.role == "super_admin",
+            )
+        )
+    )
+    user: User | None = user_result.scalar_one_or_none()
+
+    if user is None:
+        logger.warning("Super-admin login: user not found | email=%s", email)
+        raise ValueError(_INVALID_CREDENTIALS)
+
+    if not verify_password(plain_password, user.password_hash):
+        logger.warning("Super-admin login: bad password | email=%s", email)
+        raise ValueError(_INVALID_CREDENTIALS)
+
+    if not user.is_active:
+        logger.warning("Super-admin login: user inactive | email=%s", email)
+        raise ValueError(_INVALID_CREDENTIALS)
+
+    token = create_access_token(
+        user_id=str(user.id),
+        org_id=str(org.id),
+        role=user.role,
+    )
+    logger.info("Super-admin login successful | user_id=%s", user.id)
+    return token
