@@ -29,8 +29,13 @@ import type {
     OrgStats,
     OrgUpdateRequest,
     PaginatedOrgsResponse,
+    PaginatedStaffResponse,
     QueueCreate,
     QueueResponse,
+    StaffCreate,
+    StaffListParams,
+    StaffMember,
+    StaffUpdate,
     SuperAdminLoginRequest,
     TokenDetail,
     TokenResponse,
@@ -106,7 +111,18 @@ async function request<T>(
 
         try {
             const body = await resp.json();
-            rawDetail = body.detail || rawDetail;
+            // FastAPI 422 returns detail as an array of validation error objects:
+            // [{type, loc, msg, input, ctx}, ...]
+            // We must extract a string — never pass the raw array to the UI.
+            if (Array.isArray(body.detail)) {
+                rawDetail = body.detail
+                    .map((e: { loc?: string[]; msg?: string }) =>
+                        e.loc ? `${e.loc.slice(-1)[0]}: ${e.msg}` : (e.msg ?? "Validation error")
+                    )
+                    .join("; ");
+            } else if (typeof body.detail === "string") {
+                rawDetail = body.detail;
+            }
         } catch {
             // Response body not JSON
         }
@@ -238,6 +254,38 @@ export const api = {
     // ── Health ───────────────────────────────────────────────────
     health(): Promise<HealthResponse> {
         return request<HealthResponse>("/health");
+    },
+
+    // ── Staff Management ─────────────────────────────
+    listStaff(params: StaffListParams = {}): Promise<PaginatedStaffResponse> {
+        const qs = new URLSearchParams();
+        if (params.search) qs.set("search", params.search);
+        if (params.is_active != null) qs.set("is_active", String(params.is_active));
+        if (params.limit != null) qs.set("limit", String(params.limit));
+        if (params.offset != null) qs.set("offset", String(params.offset));
+        if (params.sort_order) qs.set("sort_order", params.sort_order);
+        const q = qs.toString();
+        return request<PaginatedStaffResponse>(`/staff${q ? `?${q}` : ""}`);
+    },
+
+    createStaff(data: StaffCreate): Promise<StaffMember> {
+        return request<StaffMember>("/staff", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    updateStaff(staffId: string, data: StaffUpdate): Promise<StaffMember> {
+        return request<StaffMember>(`/staff/${staffId}`, {
+            method: "PATCH",
+            body: JSON.stringify(data),
+        });
+    },
+
+    deactivateStaff(staffId: string): Promise<StaffMember> {
+        return request<StaffMember>(`/staff/${staffId}`, {
+            method: "DELETE",
+        });
     },
 
     // ── Super Admin ───────────────────────────────────

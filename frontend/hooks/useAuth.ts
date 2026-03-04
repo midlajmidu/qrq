@@ -47,6 +47,21 @@ export function useAuth(): UseAuthReturn {
         setUser(authed ? getCurrentUser() : null);
     }, []);
 
+    // Periodically check token validity — auto-logout if expired mid-session
+    useEffect(() => {
+        const interval = setInterval(() => {
+            // Don't redirect if already on /login (prevents loops)
+            if (typeof window !== "undefined" && window.location.pathname.startsWith("/login")) return;
+            if (isAuthed && !checkAuth()) {
+                removeToken();
+                setIsAuthed(false);
+                setUser(null);
+                router.replace("/login");
+            }
+        }, 30_000); // check every 30 seconds
+        return () => clearInterval(interval);
+    }, [isAuthed, router]);
+
     const login = useCallback(
         async (credentials: LoginRequest) => {
             setIsLoading(true);

@@ -123,6 +123,42 @@ export interface ApiErrorResponse {
     retryAfter?: number;
 }
 
+// ── Staff Management ──────────────────────────────────────────────
+export interface StaffMember {
+    id: string;
+    email: string;
+    org_id: string;
+    role: "admin" | "staff";
+    is_active: boolean;
+    created_at: string;
+}
+
+export interface StaffCreate {
+    email: string;
+    password: string;
+}
+
+export interface StaffUpdate {
+    email?: string;
+    is_active?: boolean;
+    new_password?: string;
+}
+
+export interface PaginatedStaffResponse {
+    items: StaffMember[];
+    total: number;
+    limit: number;
+    offset: number;
+}
+
+export interface StaffListParams {
+    search?: string;
+    is_active?: boolean;
+    limit?: number;
+    offset?: number;
+    sort_order?: "asc" | "desc";
+}
+
 // ── Super Admin ──────────────────────────────────────────────────
 type SortBy = "name" | "created_at" | "is_active";
 type SortOrder = "asc" | "desc";
