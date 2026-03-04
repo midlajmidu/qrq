@@ -67,6 +67,8 @@ export function removeToken(): void {
 
 /**
  * Check if a valid (non-expired) token exists.
+ * Uses a 30-second buffer to account for clock drift between
+ * frontend and backend, preventing "Signature has expired" races.
  */
 export function isAuthenticated(): boolean {
     const token = getToken();
@@ -75,9 +77,13 @@ export function isAuthenticated(): boolean {
     const payload = decodeToken(token);
     if (!payload) return false;
 
-    // Check expiration
+    // Check expiration with 30-second buffer for clock drift
     const now = Math.floor(Date.now() / 1000);
-    return payload.exp > now;
+    if (payload.exp <= now + 30) {
+        removeToken(); // proactively clear expired token
+        return false;
+    }
+    return true;
 }
 
 /**

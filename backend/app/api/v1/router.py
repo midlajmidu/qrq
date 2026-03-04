@@ -3,7 +3,7 @@ app/api/v1/router.py
 Top-level v1 API router — register all endpoint routers here.
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, auth, users, queues, tokens
+from app.api.v1.endpoints import health, auth, users, queues, tokens, super_admin, staff
 
 api_router = APIRouter()
 
@@ -16,8 +16,14 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 # ── Users ──────────────────────────────────────────────────────────
 api_router.include_router(users.router, prefix="/users", tags=["Users"])
 
+# ── Staff Management ───────────────────────────────────────────────
+api_router.include_router(staff.router, prefix="/staff", tags=["Staff"])
+
 # ── Queues ─────────────────────────────────────────────────────────
 api_router.include_router(queues.router, prefix="/queues", tags=["Queues"])
 
 # ── Tokens ─────────────────────────────────────────────────────────
 api_router.include_router(tokens.router, prefix="/tokens", tags=["Tokens"])
+
+# ── Super Admin ────────────────────────────────────────────────────
+api_router.include_router(super_admin.router, prefix="/super-admin", tags=["Super Admin"])

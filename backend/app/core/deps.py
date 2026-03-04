@@ -105,3 +105,18 @@ async def get_current_active_user(
     active-user dependency without the inline is_active check.
     """
     return current_user
+
+
+async def get_current_super_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Dependency: allows access ONLY to users with role == 'super_admin'.
+    Raise 403 for any other authenticated user.
+    """
+    if current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin access required",
+        )
+    return current_user
