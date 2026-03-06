@@ -230,11 +230,11 @@ export default function QueueDetailPage({ params }: PageProps) {
             if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
             if (showSkipConfirm) return;
 
-            if (e.key === "Enter" && !isDisabled && (state?.waiting_count || 0) > 0) {
+            if (e.key === "Enter" && !isDisabled) {
                 e.preventDefault();
                 handleNext();
             }
-            if ((e.key === "s" || e.key === "S") && !isDisabled && state?.current_serving) {
+            if ((e.key === "s" || e.key === "S") && !isDisabled) {
                 e.preventDefault();
                 handleSkip();
             }
@@ -347,7 +347,7 @@ export default function QueueDetailPage({ params }: PageProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" role="toolbar" aria-label="Queue actions">
                         <button
                             onClick={handleNext}
-                            disabled={isDisabled || (state?.waiting_count || 0) === 0}
+                            disabled={isDisabled}
                             aria-label="Call next token (keyboard shortcut: Enter)"
                             className="py-4 px-6 bg-blue-600 text-white font-bold text-lg rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-all shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-600 disabled:hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                         >
@@ -363,7 +363,7 @@ export default function QueueDetailPage({ params }: PageProps) {
 
                         <button
                             onClick={handleSkip}
-                            disabled={isDisabled || !state?.current_serving}
+                            disabled={isDisabled}
                             aria-label="Skip current token (keyboard shortcut: S)"
                             className="py-4 px-6 bg-white text-amber-700 font-bold text-lg rounded-xl border border-amber-200 hover:bg-amber-50 active:bg-amber-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
                         >
@@ -372,7 +372,7 @@ export default function QueueDetailPage({ params }: PageProps) {
 
                         <button
                             onClick={() => performAction("done", () => api.callNext(queueId, "done"), `Completed & called next`)}
-                            disabled={isDisabled || !state?.current_serving}
+                            disabled={isDisabled}
                             aria-label="Mark done and call next token"
                             className="py-4 px-6 bg-white text-emerald-700 font-bold text-lg rounded-xl border border-emerald-200 hover:bg-emerald-50 active:bg-emerald-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
                         >

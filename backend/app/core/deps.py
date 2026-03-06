@@ -125,18 +125,25 @@ async def get_current_active_user(
     return current_user
 
 
+async def get_current_super_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Dependency: allows access ONLY to users with role == 'super_admin'.
+    Raise 403 for any other authenticated user.
+    """
+    if current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin access required",
+        )
+    return current_user
+
+
 def require_super_admin() -> callable:
     """
     Dependency that enforces the user has the 'super_admin' role.
     Usage:
         user = Depends(require_super_admin())
     """
-    async def dep(current_user: User = Depends(get_current_active_user)) -> User:
-        if current_user.role != "super_admin":
-            logger.warning("User %s attempted to access super_admin endpoint", current_user.id)
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions",
-            )
-        return current_user
-    return dep
+    return get_current_super_admin

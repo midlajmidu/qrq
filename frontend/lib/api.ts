@@ -18,11 +18,25 @@ import type {
     ApiErrorResponse,
     HealthResponse,
     JoinResponse,
+    ListOrgsParams,
     LoginRequest,
     NextResponse,
     NoTokenResponse,
+    OrgCreateRequest,
+    OrgCreateResponse,
+    OrgDetail,
+    OrgDetailExtended,
+    OrgStats,
+    OrgUpdateRequest,
+    PaginatedOrgsResponse,
+    PaginatedStaffResponse,
     QueueCreate,
     QueueResponse,
+    StaffCreate,
+    StaffListParams,
+    StaffMember,
+    StaffUpdate,
+    SuperAdminLoginRequest,
     TokenDetail,
     TokenResponse,
     PublicTokenResponse,
@@ -97,7 +111,18 @@ async function request<T>(
 
         try {
             const body = await resp.json();
-            rawDetail = body.detail || rawDetail;
+            // FastAPI 422 returns detail as an array of validation error objects:
+            // [{type, loc, msg, input, ctx}, ...]
+            // We must extract a string — never pass the raw array to the UI.
+            if (Array.isArray(body.detail)) {
+                rawDetail = body.detail
+                    .map((e: { loc?: string[]; msg?: string }) =>
+                        e.loc ? `${e.loc.slice(-1)[0]}: ${e.msg}` : (e.msg ?? "Validation error")
+                    )
+                    .join("; ");
+            } else if (typeof body.detail === "string") {
+                rawDetail = body.detail;
+            }
         } catch {
             // Response body not JSON
         }
@@ -229,5 +254,84 @@ export const api = {
     // ── Health ───────────────────────────────────────────────────
     health(): Promise<HealthResponse> {
         return request<HealthResponse>("/health");
+    },
+
+    // ── Staff Management ─────────────────────────────
+    listStaff(params: StaffListParams = {}): Promise<PaginatedStaffResponse> {
+        const qs = new URLSearchParams();
+        if (params.search) qs.set("search", params.search);
+        if (params.is_active != null) qs.set("is_active", String(params.is_active));
+        if (params.limit != null) qs.set("limit", String(params.limit));
+        if (params.offset != null) qs.set("offset", String(params.offset));
+        if (params.sort_order) qs.set("sort_order", params.sort_order);
+        const q = qs.toString();
+        return request<PaginatedStaffResponse>(`/staff${q ? `?${q}` : ""}`);
+    },
+
+    createStaff(data: StaffCreate): Promise<StaffMember> {
+        return request<StaffMember>("/staff", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    updateStaff(staffId: string, data: StaffUpdate): Promise<StaffMember> {
+        return request<StaffMember>(`/staff/${staffId}`, {
+            method: "PATCH",
+            body: JSON.stringify(data),
+        });
+    },
+
+    deactivateStaff(staffId: string): Promise<StaffMember> {
+        return request<StaffMember>(`/staff/${staffId}`, {
+            method: "DELETE",
+        });
+    },
+
+    // ── Super Admin ───────────────────────────────────
+    superAdminLogin(data: SuperAdminLoginRequest): Promise<TokenResponse> {
+        return request<TokenResponse>("/super-admin/auth/login", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    getOrganizationStats(): Promise<OrgStats> {
+        return request<OrgStats>("/super-admin/stats");
+    },
+
+    listOrganizations(params: ListOrgsParams = {}): Promise<PaginatedOrgsResponse> {
+        const qs = new URLSearchParams();
+        if (params.search) qs.set("search", params.search);
+        if (params.limit != null) qs.set("limit", String(params.limit));
+        if (params.offset != null) qs.set("offset", String(params.offset));
+        if (params.sort_by) qs.set("sort_by", params.sort_by);
+        if (params.sort_order) qs.set("sort_order", params.sort_order);
+        const q = qs.toString();
+        return request<PaginatedOrgsResponse>(`/super-admin/organizations${q ? `?${q}` : ""}`);
+    },
+
+    getOrganizationDetail(orgId: string): Promise<OrgDetailExtended> {
+        return request<OrgDetailExtended>(`/super-admin/organizations/${orgId}`);
+    },
+
+    createOrganization(data: OrgCreateRequest): Promise<OrgCreateResponse> {
+        return request<OrgCreateResponse>("/super-admin/organizations", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    updateOrganization(orgId: string, data: OrgUpdateRequest): Promise<OrgDetail> {
+        return request<OrgDetail>(`/super-admin/organizations/${orgId}`, {
+            method: "PUT",
+            body: JSON.stringify(data),
+        });
+    },
+
+    softDeleteOrganization(orgId: string): Promise<OrgDetail> {
+        return request<OrgDetail>(`/super-admin/organizations/${orgId}`, {
+            method: "DELETE",
+        });
     },
 } as const;
