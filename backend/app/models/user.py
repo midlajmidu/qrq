@@ -46,6 +46,9 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    
+    initial_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Role: admin | staff | display — no hardcoded checks here
     role: Mapped[str] = mapped_column(String(50), default="admin", nullable=False)

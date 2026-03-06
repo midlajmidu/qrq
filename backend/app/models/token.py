@@ -21,6 +21,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    String,
     UniqueConstraint,
     func,
 )
@@ -77,6 +78,11 @@ class Token(Base):
     served_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+    # ── Customer Info ──────────────────────────────────────────────
+    customer_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    customer_age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    customer_phone: Mapped[str] = mapped_column(String(20), nullable=False)
 
     # ── Relationships ──────────────────────────────────────────────
     queue: Mapped["Queue"] = relationship(  # noqa: F821

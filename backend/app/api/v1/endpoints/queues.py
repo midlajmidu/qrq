@@ -21,6 +21,7 @@ from app.core.deps import get_current_active_user
 from app.db.deps import get_db
 from app.models.user import User
 from app.schemas.queue import (
+    JoinRequest,
     JoinResponse,
     NextResponse,
     NoTokenResponse,
@@ -176,38 +177,37 @@ async def reset_queue(
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.post(
-    "/{queue_id}/join",
+    "/{queue_id}/tokens",
     response_model=JoinResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Join Queue (Public)",
+    summary="Take Token (Public)",
     dependencies=[Depends(join_rate_limit)],
     description=(
-        "Public endpoint — no auth required. Rate limited to 30/min per IP. "
-        "Atomically assigns the next token number using a row-level lock. "
-        "Safe under 100+ simultaneous requests."
+        "Public endpoint — no auth required. Customer provides name, age (optional), phone. "
+        "Rate limited to 30/min per IP. Atomically assigns the next token number."
     ),
 )
-async def join_queue(
+async def create_token(
     queue_id: uuid.UUID,
+    body: JoinRequest,
     request: Request,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> JoinResponse:
     """
-    Customer joins a queue. No authentication required.
+    Customer joins a queue by providing contact details.
     Returns token number and current position.
     """
     try:
-        result = await token_service.join_queue(db, queue_id=queue_id)
-        # Fetch queue directly without org_id checks since this is a public endpoint
+        result = await token_service.join_queue(db, queue_id=queue_id, data=body)
         from sqlalchemy import select
         from app.models.queue import Queue
         q_res = await db.execute(select(Queue).where(Queue.id == queue_id))
         queue = q_res.scalar_one_or_none()
         if queue:
             background_tasks.add_task(
-                token_service.notify_queue_update, 
-                queue_id=queue_id, 
+                token_service.notify_queue_update,
+                queue_id=queue_id,
                 org_id=queue.org_id
             )
     except ValueError as exc:
@@ -221,15 +221,16 @@ async def join_queue(
         ip_address=request.client.host if request.client else None,
         resource_type="queue",
         resource_id=str(queue_id),
-        details={"token_number": result.token_number},
+        details={"token_number": result.token_number, "customer_name": body.name},
     )
     return result
+
 
 @router.get(
     "/{queue_id}/tokens/{token_number}",
     response_model=PublicTokenResponse,
     summary="Get Token Status (Public)",
-    description="Returns the current status of a user's exact ticket.",
+    description="Returns the current status and customer info of a ticket.",
 )
 async def get_public_token(
     queue_id: uuid.UUID,
@@ -247,7 +248,7 @@ async def get_public_token(
     token = result.scalar_one_or_none()
     if token is None:
         raise HTTPException(status_code=404, detail="Token not found")
-    return PublicTokenResponse(token_number=token.token_number, status=token.status)
+    return PublicTokenResponse.model_validate(token)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -263,17 +264,18 @@ async def get_public_token(
 )
 async def admin_join(
     queue_id: uuid.UUID,
+    body: JoinRequest,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> JoinResponse:
     try:
-        # We need to verify queue belongs to current_user's org
+        # Verify queue belongs to current_user's org
         await queue_service.get_queue_or_404(db, queue_id=queue_id, org_id=current_user.org_id)
-        result = await token_service.join_queue(db, queue_id=queue_id)
+        result = await token_service.join_queue(db, queue_id=queue_id, data=body)
         background_tasks.add_task(
-            token_service.notify_queue_update, 
-            queue_id=queue_id, 
+            token_service.notify_queue_update,
+            queue_id=queue_id,
             org_id=current_user.org_id
         )
     except ValueError as exc:

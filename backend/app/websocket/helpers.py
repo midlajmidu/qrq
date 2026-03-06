@@ -41,7 +41,7 @@ async def build_queue_snapshot(
 
     # ── Currently serving ──────────────────────────────────────────
     serving_result = await db.execute(
-        select(Token.token_number)
+        select(Token)
         .where(
             Token.queue_id == queue_id,
             Token.status == TokenStatus.serving,
@@ -49,7 +49,14 @@ async def build_queue_snapshot(
         .order_by(Token.token_number.desc())
         .limit(1)
     )
-    current_serving = serving_result.scalar_one_or_none() or 0
+    serving_token = serving_result.scalar_one_or_none()
+    current_serving = serving_token.token_number if serving_token else 0
+    serving_details = {
+        "token_number": serving_token.token_number,
+        "customer_name": serving_token.customer_name,
+        "customer_age": serving_token.customer_age,
+        "customer_phone": serving_token.customer_phone,
+    } if serving_token else None
 
     # ── Waiting count ──────────────────────────────────────────────
     waiting_result = await db.execute(
@@ -77,6 +84,9 @@ async def build_queue_snapshot(
             "token_number": t.token_number,
             "status": t.status.value,
             "served_at": t.served_at.isoformat() if t.served_at else None,
+            "customer_name": t.customer_name,
+            "customer_age": t.customer_age,
+            "customer_phone": t.customer_phone,
         }
         for t in recent_result.scalars().all()
     ]
@@ -96,6 +106,9 @@ async def build_queue_snapshot(
             "id": str(t.id),
             "token_number": t.token_number,
             "status": t.status.value,
+            "customer_name": t.customer_name,
+            "customer_age": t.customer_age,
+            "customer_phone": t.customer_phone,
         }
         for t in waiting_tokens_result.scalars().all()
     ]
@@ -107,6 +120,7 @@ async def build_queue_snapshot(
         "prefix": queue.prefix,
         "is_active": queue.is_active,
         "current_serving": current_serving,
+        "serving_details": serving_details,
         "waiting_count": waiting_count,
         "last_called": current_serving,
         "total_issued": queue.current_token_number,

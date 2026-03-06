@@ -24,7 +24,7 @@ SENTINEL_ORG_NAME = "Super Admin System"
 
 # ── Change these before first run ──────────────────────────────────
 SUPER_ADMIN_EMAIL    = os.getenv("SUPER_ADMIN_EMAIL", "superadmin@qrq.internal")
-SUPER_ADMIN_PASSWORD = os.getenv("SUPER_ADMIN_PASSWORD", "SuperAdmin@2026!")
+SUPER_ADMIN_PASSWORD = os.getenv("SUPER_ADMIN_PASSWORD", "SuperAdmin@2026!!!")
 # ──────────────────────────────────────────────────────────────────
 
 
@@ -32,46 +32,35 @@ async def seed_superadmin() -> None:
     await connect_db()
 
     async with AsyncSessionLocal() as db:
-        print("\n── Super Admin Setup ──")
+        print("\n── Global Super Admin Setup ──")
 
-        # 1. Sentinel org
-        res = await db.execute(select(Organization).where(Organization.slug == SENTINEL_ORG_SLUG))
-        org = res.scalar_one_or_none()
-        if org is None:
-            org = Organization(name=SENTINEL_ORG_NAME, slug=SENTINEL_ORG_SLUG)
-            db.add(org)
-            await db.flush()
-            print(f"  ✓ Created sentinel org: {SENTINEL_ORG_SLUG}")
-        else:
-            print(f"  · Sentinel org already exists: {SENTINEL_ORG_SLUG}")
-
-        # 2. Super admin user
+        # Create/Update Super admin user
         res = await db.execute(
             select(User).where(
                 User.email == SUPER_ADMIN_EMAIL,
-                User.org_id == org.id,
+                User.org_id.is_(None),
             )
         )
         user = res.scalar_one_or_none()
         if user is None:
             user = User(
-                org_id=org.id,
+                org_id=None,
                 email=SUPER_ADMIN_EMAIL,
                 password_hash=hash_password(SUPER_ADMIN_PASSWORD),
                 role="super_admin",
             )
             db.add(user)
-            print(f"  ✓ Created super admin: {SUPER_ADMIN_EMAIL}")
+            print(f"  ✓ Created: {SUPER_ADMIN_EMAIL}")
         else:
-            print(f"  · Super admin already exists: {SUPER_ADMIN_EMAIL}")
+            user.password_hash = hash_password(SUPER_ADMIN_PASSWORD)
+            print(f"  ✓ Updated password for: {SUPER_ADMIN_EMAIL}")
 
         await db.commit()
 
-    print("\n✅ Super admin ready.")
+    print("\n✅ Global Super admin ready.")
     print(f"\n  Login URL : http://localhost:3000/super-admin/login")
     print(f"  Email     : {SUPER_ADMIN_EMAIL}")
     print(f"  Password  : {SUPER_ADMIN_PASSWORD}")
-    print("\n  ⚠️  Change the password after first login!\n")
 
 
 if __name__ == "__main__":

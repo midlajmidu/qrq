@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.token import TokenStatus
 
@@ -32,6 +32,18 @@ class QueueResponse(BaseModel):
 
 # ── Token join ────────────────────────────────────────────────────────────────
 
+class JoinRequest(BaseModel):
+    """Customer details required to take a token."""
+    name: str = Field(..., min_length=1, max_length=120)
+    age: Optional[int] = Field(None, ge=0, le=150)
+    phone: str = Field(..., min_length=1, max_length=20)
+
+    @field_validator("name", "phone", mode="before")
+    @classmethod
+    def strip_whitespace(cls, v: str) -> str:
+        return v.strip() if isinstance(v, str) else v
+
+
 class JoinResponse(BaseModel):
     """Returned when a customer joins a queue."""
     token_number: int
@@ -44,6 +56,11 @@ class PublicTokenResponse(BaseModel):
     """Public details for a single token."""
     token_number: int
     status: TokenStatus
+    customer_name: str
+    customer_age: Optional[int]
+    customer_phone: str
+
+    model_config = {"from_attributes": True}
 
 
 # ── Admin next ────────────────────────────────────────────────────────────────
@@ -68,5 +85,8 @@ class TokenResponse(BaseModel):
     status: TokenStatus
     created_at: datetime
     served_at: Optional[datetime]
+    customer_name: str
+    customer_age: Optional[int]
+    customer_phone: str
 
     model_config = {"from_attributes": True}

@@ -18,15 +18,24 @@ export default function SuperAdminRoute({ children }: { children: ReactNode }) {
     useEffect(() => {
         setMounted(true);
         const authed = isAuthenticated();
+
         if (!authed) {
+            console.warn("[SuperAdminRoute] Not authenticated, redirecting to login");
             router.replace("/super-admin/login");
             return;
         }
+
         const user = getCurrentUser();
-        if (user?.role === "super_admin") {
+        if (!user) {
+            console.warn("[SuperAdminRoute] Authenticated but no user payload found");
+            router.replace("/super-admin/login");
+            return;
+        }
+
+        if (user.role === "super_admin") {
             setAllowed(true);
         } else {
-            // Regular admin — redirect to normal dashboard
+            console.warn(`[SuperAdminRoute] Unauthorized role: ${user.role}, redirecting to /dashboard`);
             router.replace("/dashboard");
         }
     }, [router]);
