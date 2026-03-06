@@ -10,7 +10,8 @@ import { getToken } from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import ConnectionBadge from "@/components/ConnectionBadge";
 import ConfirmModal from "@/components/ConfirmModal";
-import type { RecentToken, WaitingToken } from "@/types/api";
+import QueueQRCode from "@/components/QueueQRCode";
+import type { RecentToken, WaitingToken, QueueResponse } from "@/types/api";
 
 interface PageProps {
     params: Promise<{ queueId: string }>;
@@ -43,7 +44,11 @@ export default function QueueDetailPage({ params }: PageProps) {
     const filteredWaiting = React.useMemo(() => {
         if (!state?.waiting_tokens) return [];
         const filtered = waitingSearch
-            ? state.waiting_tokens.filter(t => String(t.token_number).includes(waitingSearch))
+            ? state.waiting_tokens.filter(t =>
+                String(t.token_number).includes(waitingSearch) ||
+                t.customer_name?.toLowerCase().includes(waitingSearch.toLowerCase()) ||
+                t.customer_phone?.includes(waitingSearch)
+            )
             : state.waiting_tokens;
         return filtered;
     }, [state?.waiting_tokens, waitingSearch]);
@@ -56,7 +61,11 @@ export default function QueueDetailPage({ params }: PageProps) {
     const filteredRecent = React.useMemo(() => {
         if (!state?.recent_tokens) return [];
         const filtered = recentSearch
-            ? state.recent_tokens.filter(t => String(t.token_number).includes(recentSearch))
+            ? state.recent_tokens.filter(t =>
+                String(t.token_number).includes(recentSearch) ||
+                t.customer_name?.toLowerCase().includes(recentSearch.toLowerCase()) ||
+                t.customer_phone?.includes(recentSearch)
+            )
             : state.recent_tokens;
         return filtered;
     }, [state?.recent_tokens, recentSearch]);
@@ -69,11 +78,20 @@ export default function QueueDetailPage({ params }: PageProps) {
     React.useEffect(() => { setWaitingPage(1); }, [waitingSearch]);
     React.useEffect(() => { setRecentPage(1); }, [recentSearch]);
 
+    const [initialQueue, setInitialQueue] = useState<QueueResponse | null>(null);
+
     // Debounce ref to prevent double-click spam
     const lastActionRef = useRef(0);
     const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const isDisabled = status !== "connected" || actionLoading !== null;
+    // Initial fetch for queue details (REST backup for WS)
+    useEffect(() => {
+        api.getQueue(queueId)
+            .then(setInitialQueue)
+            .catch(() => { /* ignore, WS snapshot is primary */ });
+    }, [queueId]);
+
+    const isDisabled = actionLoading !== null; // Don't block on socket status for manual entry
 
     // Auto-clear error after 5s
     const setErrorWithTimer = useCallback((msg: string) => {
@@ -155,19 +173,31 @@ export default function QueueDetailPage({ params }: PageProps) {
         }
     }, [queueId, router, toast]);
 
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [addName, setAddName] = useState("");
+    const [addPhone, setAddPhone] = useState("");
+    const [addAge, setAddAge] = useState("");
+
     const handleAddCustomer = useCallback(async () => {
+        if (!addName.trim() || !addPhone.trim()) return;
         setActionLoading("add");
         setActionError(null);
         try {
-            const res = await api.adminJoin(queueId);
+            const res = await api.adminJoin(queueId, {
+                name: addName.trim(),
+                phone: addPhone.trim(),
+                age: addAge ? parseInt(addAge, 10) : undefined,
+            });
             toast(`Token ${state?.prefix || ""}${res.token_number} created`, "success");
+            setShowAddForm(false);
+            setAddName(""); setAddPhone(""); setAddAge("");
         } catch (err: unknown) {
             if (err instanceof ApiError) setActionError(err.detail);
             else setActionError("Failed to add customer");
         } finally {
             setActionLoading(null);
         }
-    }, [queueId, state?.prefix, toast]);
+    }, [queueId, addName, addPhone, addAge, state?.prefix, toast]);
 
     const handleInvite = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -267,12 +297,12 @@ export default function QueueDetailPage({ params }: PageProps) {
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">
-                            {state?.queue_name || "Loading..."}
+                            {state?.queue_name || initialQueue?.name || "Loading..."}
                         </h1>
                         <p className="text-sm text-gray-500">
-                            Prefix: <span className="font-mono font-semibold">{state?.prefix || "—"}</span>
+                            Prefix: <span className="font-mono font-semibold">{state?.prefix || initialQueue?.prefix || "—"}</span>
                             {" · "}
-                            {state?.is_active ? (
+                            {(state?.is_active ?? initialQueue?.is_active) ? (
                                 <span className="text-emerald-600 font-medium">Active</span>
                             ) : (
                                 <span className="text-red-500 font-medium">Inactive</span>
@@ -336,6 +366,20 @@ export default function QueueDetailPage({ params }: PageProps) {
                         <div className="text-8xl sm:text-9xl font-black text-blue-600 tabular-nums tracking-tight leading-none py-4" aria-live="polite" aria-atomic="true">
                             {state?.prefix || ""}{state?.current_serving || 0}
                         </div>
+
+                        {state?.serving_details && (
+                            <div className="mt-2 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                <p className="text-2xl font-bold text-gray-900">{state.serving_details.customer_name}</p>
+                                <div className="flex items-center justify-center gap-3 mt-1 text-sm text-gray-500 font-medium">
+                                    {state.serving_details.customer_age != null && (
+                                        <span>Age: {state.serving_details.customer_age}</span>
+                                    )}
+                                    {state.serving_details.customer_age != null && <span>•</span>}
+                                    <span>{state.serving_details.customer_phone}</span>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-500">
                             <span>Waiting: <strong className="text-gray-900">{state?.waiting_count ?? 0}</strong></span>
                             <span className="text-gray-300" aria-hidden="true">|</span>
@@ -384,16 +428,32 @@ export default function QueueDetailPage({ params }: PageProps) {
                     <div className="flex flex-col md:flex-row gap-6 border-t border-gray-100 pt-6">
                         <div className="flex-1 space-y-2">
                             <p className="text-sm font-semibold text-gray-500 uppercase tracking-widest">Manual Entry</p>
-                            <button
-                                onClick={handleAddCustomer}
-                                disabled={isDisabled || actionLoading === "add"}
-                                className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                                </svg>
-                                Add Customer
-                            </button>
+                            {!showAddForm ? (
+                                <button
+                                    onClick={() => setShowAddForm(true)}
+                                    disabled={isDisabled}
+                                    className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add Customer
+                                </button>
+                            ) : (
+                                <div className="space-y-2">
+                                    <input type="text" value={addName} onChange={e => setAddName(e.target.value)} placeholder="Full Name *" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    <input type="tel" value={addPhone} onChange={e => setAddPhone(e.target.value)} placeholder="Phone *" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    <input type="number" value={addAge} onChange={e => setAddAge(e.target.value)} placeholder="Age (optional)" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    <div className="flex gap-2">
+                                        <button onClick={handleAddCustomer} disabled={!addName.trim() || !addPhone.trim() || actionLoading === "add" || isDisabled} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm disabled:opacity-50 hover:bg-blue-700 transition-colors">
+                                            {actionLoading === "add" ? "Adding..." : "Confirm"}
+                                        </button>
+                                        <button onClick={() => { setShowAddForm(false); setAddName(""); setAddPhone(""); setAddAge(""); }} className="flex-1 py-2 bg-gray-50 border border-gray-200 text-gray-600 font-semibold rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="flex-1 space-y-2">
                             <p className="text-sm font-semibold text-gray-500 uppercase tracking-widest">Invite by Number</p>
@@ -461,8 +521,11 @@ export default function QueueDetailPage({ params }: PageProps) {
                     )}
                 </div>
 
-                {/* Right column: Waiting List & Recent Tokens */}
+                {/* Right column: QR Code, Waiting List & Recent Tokens */}
                 <div className="space-y-6">
+                    {/* QR Code */}
+                    <QueueQRCode queueId={queueId} queueName={state?.queue_name || "Queue"} />
+
                     {/* Waiting List */}
                     <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" aria-label="Waiting list">
                         <div className="px-5 py-4 border-b border-gray-100 flex flex-col gap-3">
@@ -483,25 +546,35 @@ export default function QueueDetailPage({ params }: PageProps) {
                                 />
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto max-h-[250px] divide-y divide-gray-50">
+                        <div className="flex-1 overflow-y-auto max-h-[320px] divide-y divide-gray-50">
                             {paginatedWaiting.length > 0 ? (
                                 paginatedWaiting.map((t: WaitingToken) => (
-                                    <div key={t.id} className="px-5 py-3 flex items-center justify-between group hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-lg font-bold text-gray-900 tabular-nums w-14">
-                                                {state?.prefix || ""}{t.token_number}
-                                            </span>
-                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700">
-                                                Waiting
-                                            </span>
+                                    <div key={t.id} className="px-5 py-3 group hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-lg font-bold text-gray-900 tabular-nums w-14">
+                                                    {state?.prefix || ""}{t.token_number}
+                                                </span>
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700">
+                                                    Waiting
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => setTokenToRemove({ id: t.id, number: t.token_number })}
+                                                className="opacity-0 group-hover:opacity-100 text-xs font-semibold px-2 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded transition-all focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                                                aria-label={`Remove token ${t.token_number}`}
+                                            >
+                                                Remove
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => setTokenToRemove({ id: t.id, number: t.token_number })}
-                                            className="opacity-0 group-hover:opacity-100 text-xs font-semibold px-2 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded transition-all focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                                            aria-label={`Remove token ${t.token_number}`}
-                                        >
-                                            Remove
-                                        </button>
+                                        {/* Customer info row */}
+                                        {t.customer_name && (
+                                            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 pl-[68px]">
+                                                <span className="font-medium text-gray-700">{t.customer_name}</span>
+                                                {t.customer_age != null && <span>Age: {t.customer_age}</span>}
+                                                <span>{t.customer_phone}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 ))
                             ) : (
@@ -657,18 +730,27 @@ const RecentTokenRow = React.memo(function RecentTokenRow({
     };
 
     return (
-        <div className="px-5 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <span className="text-lg font-bold text-gray-900 tabular-nums w-14">
-                    {prefix}{t.token_number}
-                </span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyles[t.status] || "bg-gray-100 text-gray-500"}`}>
-                    {t.status}
+        <div className="px-5 py-3">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <span className="text-lg font-bold text-gray-900 tabular-nums w-14">
+                        {prefix}{t.token_number}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyles[t.status] || "bg-gray-100 text-gray-500"}`}>
+                        {t.status}
+                    </span>
+                </div>
+                <span className="text-xs text-gray-400 tabular-nums">
+                    {t.served_at ? new Date(t.served_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
                 </span>
             </div>
-            <span className="text-xs text-gray-400 tabular-nums">
-                {t.served_at ? new Date(t.served_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
-            </span>
+            {t.customer_name && (
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 pl-[68px]">
+                    <span className="font-medium text-gray-700">{t.customer_name}</span>
+                    {t.customer_age != null && <span>Age: {t.customer_age}</span>}
+                    <span>{t.customer_phone}</span>
+                </div>
+            )}
         </div>
     );
 });
