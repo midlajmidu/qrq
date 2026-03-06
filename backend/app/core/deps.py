@@ -64,26 +64,44 @@ async def get_current_user(
         raise _CREDENTIALS_EXCEPTION
 
     user_id_raw: str | None = payload.get("sub")
+    role_raw: str | None = payload.get("role")
     org_id_raw: str | None = payload.get("org_id")
 
-    if not user_id_raw or not org_id_raw:
-        logger.warning("Token missing sub or org_id claim")
+    if not user_id_raw or not role_raw:
+        logger.warning("Token missing sub or role claim")
         raise _CREDENTIALS_EXCEPTION
+        
+    if role_raw == "super_admin":
+        if org_id_raw is not None:
+            logger.warning("Super admin token provided with org_id")
+            raise _CREDENTIALS_EXCEPTION
+    else:
+        if org_id_raw is None:
+            logger.warning("Normal token missing org_id claim")
+            raise _CREDENTIALS_EXCEPTION
 
     # ── Parse UUIDs ────────────────────────────────────────────────
     try:
         user_id = uuid.UUID(user_id_raw)
-        org_id = uuid.UUID(org_id_raw)
+        org_id = uuid.UUID(org_id_raw) if org_id_raw else None
     except ValueError:
         raise _CREDENTIALS_EXCEPTION
 
     # ── Fetch user from DB (always fresh — catches deactivation) ───
-    result = await db.execute(
-        select(User).where(
-            User.id == user_id,
-            User.org_id == org_id,    # ← TENANT ISOLATION enforced
+    if org_id:
+        result = await db.execute(
+            select(User).where(
+                User.id == user_id,
+                User.org_id == org_id,    # ← TENANT ISOLATION enforced
+            )
         )
-    )
+    else:
+        result = await db.execute(
+            select(User).where(
+                User.id == user_id,
+                User.org_id.is_(None),    # ← Super admin case
+            )
+        )
     user: User | None = result.scalar_one_or_none()
 
     if user is None:
@@ -120,3 +138,12 @@ async def get_current_super_admin(
             detail="Super admin access required",
         )
     return current_user
+
+
+def require_super_admin() -> callable:
+    """
+    Dependency that enforces the user has the 'super_admin' role.
+    Usage:
+        user = Depends(require_super_admin())
+    """
+    return get_current_super_admin
