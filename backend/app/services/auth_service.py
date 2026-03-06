@@ -93,7 +93,6 @@ async def authenticate_user(
     return token
 
 
-_SUPER_ADMIN_ORG_SLUG = "super-admin-system"
 
 
 async def authenticate_super_admin(
@@ -103,30 +102,18 @@ async def authenticate_super_admin(
     plain_password: str,
 ) -> str:
     """
-    Authenticate a super admin by email + password only.
-    Super admins live in the sentinel org with slug='super-admin-system'.
+    Authenticate a global super admin (no organization attached).
+    Super admins are identified by role == 'super_admin' and org_id IS NULL.
     Raises ValueError on any failure (generic message to prevent enumeration).
     """
     logger.info("Super-admin login attempt | email=%s", email)
 
-    # Resolve the sentinel org
-    org_result = await db.execute(
-        select(Organization).where(Organization.slug == _SUPER_ADMIN_ORG_SLUG)
-    )
-    org: Organization | None = org_result.scalar_one_or_none()
-    if org is None or not org.is_active:
-        logger.warning("Super-admin login: sentinel org missing or inactive")
-        raise ValueError(_INVALID_CREDENTIALS)
-
-    # Find user in that org with role == super_admin
-    from sqlalchemy import and_
+    # Find user with role == super_admin and NO org_id
     user_result = await db.execute(
         select(User).where(
-            and_(
-                User.email == email,
-                User.org_id == org.id,
-                User.role == "super_admin",
-            )
+            User.email == email,
+            User.role == "super_admin",
+            User.org_id.is_(None),
         )
     )
     user: User | None = user_result.scalar_one_or_none()
@@ -143,9 +130,10 @@ async def authenticate_super_admin(
         logger.warning("Super-admin login: user inactive | email=%s", email)
         raise ValueError(_INVALID_CREDENTIALS)
 
+    # Note: org_id is None for super_admin
     token = create_access_token(
         user_id=str(user.id),
-        org_id=str(org.id),
+        org_id=None,
         role=user.role,
     )
     logger.info("Super-admin login successful | user_id=%s", user.id)

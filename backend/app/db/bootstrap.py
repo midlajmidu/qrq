@@ -12,23 +12,25 @@ logger = logging.getLogger(__name__)
 async def bootstrap_db() -> None:
     """
     Production-safe database bootstrap.
-    Ensures a default organization and admin user exist if the DB is empty.
+    Ensures a global super admin user exists.
     """
     async with AsyncSession(engine) as session:
-        # Check if any organizations exist
-        result = await session.execute(select(func.count()).select_from(Organization))
-        count = result.scalar() or 0
+        # Check if any super admin exists
+        result = await session.execute(
+            select(User).where(User.role == "super_admin", User.org_id.is_(None))
+        )
+        existing_super = result.scalar_one_or_none()
 
-        if count > 0:
-            return  # Database is already initialized
+        if existing_super:
+            return  # System already bootstrapped
 
         try:
-            logger.info("Starting database bootstrap process...")
+            logger.info("Starting database bootstrap (Super Admin setup)...")
 
-            # Create Super Admin User (No organization attached)
+            # Create Global Super Admin User
             super_admin = User(
-                email="admin@flowclinic.com",
-                password_hash=hash_password("Admin@123"),
+                email="superadmin@qrq.internal",
+                password_hash=hash_password("SuperAdmin@2026!!!"),
                 role="super_admin",
                 is_active=True,
                 org_id=None
@@ -36,7 +38,9 @@ async def bootstrap_db() -> None:
             session.add(super_admin)
             
             await session.commit()
-            logger.warning("⚠ Bootstrap super_admin created. Change password immediately.")
+            logger.warning("✅ Bootstrap: Global super_admin created.")
+            logger.warning("   Email:    superadmin@qrq.internal")
+            logger.warning("   Password: SuperAdmin@2026!!!")
             
         except Exception as e:
             await session.rollback()

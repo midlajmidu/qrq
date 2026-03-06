@@ -37,6 +37,10 @@ class Organization(Base):
         server_default=func.now(),
         nullable=False,
     )
+    
+    # ── Clinic Information ─────────────────────────────────────────
+    address: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    phone_number: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     # ── Relationships ──────────────────────────────────────────────
     users: Mapped[list["User"]] = relationship(  # noqa: F821

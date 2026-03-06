@@ -83,30 +83,29 @@ POSTGRES_DB=queuedb
 docker compose up --build -d
 ```
 
-### 4. Run Initial Setup (Optional: Seed Data)
-```bash
-# Apply database migrations
-docker compose exec backend alembic upgrade head
+### 4. Initial Setup (Super Admin)
+The system automatically creates a global **Super Admin** on the first run.
+- **Login URL**: `http://localhost:3000/super-admin/login`
+- **Default Email**: `superadmin@qrq.internal`
+- **Default Password**: `SuperAdmin@2026!!!`
 
-# Seed initial admin accounts and queues
-docker compose exec backend python scripts/seed.py
-```
+Use the Super Admin panel to create your first **Organization** (Tenant) and their initial **Admin** account.
 
 ---
 
 ## 📖 Usage Guide
 
-### 🖥️ Admin Dashboard
-- **Login**: `http://localhost:3000/login`
-- **Dashboard**: `http://localhost:3000/dashboard`
-- **Sample Credentials** (after seeding):
-  - **Email**: `admin@acme.com`
-  - **Password**: `password123`
-  - **Organization Slug**: `org-a`
+### 📂 Super Admin Portal
+- **URL**: `http://localhost:3000/super-admin/login`
+- **Purpose**: Manage the entire SaaS platform. Use this to create new clinics, monitor platform stats, and manage organizations.
+
+### 🖥️ Clinic Admin Dashboard
+- **URL**: `http://localhost:3000/login`
+- **Purpose**: Staff and Clinic Admins manage their specific queues here.
+- **Login**: Requires the **Organization Slug** you created in the Super Admin panel.
 - **Actions**:
   - `Enter` key: Call the next person in line.
   - `S` key: Skip the current customer.
-  - Search: Use the search bar in the waiting list to find specific token numbers.
 
 ### 📺 TV Display
 - **URL**: `http://localhost:3000/display/[queueId]`

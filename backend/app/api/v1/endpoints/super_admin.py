@@ -17,7 +17,7 @@ import logging
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import asc, desc, func, or_, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +28,7 @@ from app.models.user import User
 from app.core.security import hash_password
 from app.schemas.auth import TokenResponse
 from app.services.auth_service import authenticate_super_admin
+from app.audit.service import record_event
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -77,16 +78,14 @@ class OrgDetail(BaseModel):
     slug: str
     is_active: bool
     created_at: str
+    admin_email: str | None = None
+    admin_initial_password: str | None = None
+    admin_password_changed_at: str | None = None
 
     model_config = {"from_attributes": True}
 
 
-class OrgDetailExtended(BaseModel):
-    id: str
-    name: str
-    slug: str
-    is_active: bool
-    created_at: str
+class OrgDetailExtended(OrgDetail):
     total_users: int
     total_admins: int
 
@@ -110,15 +109,22 @@ class OrgStats(BaseModel):
     inactive: int
 
 
+class ResetPasswordRequest(BaseModel):
+    new_password: str = Field(..., min_length=8)
+
+
 # ── Internal helpers ────────────────────────────────────────────────────────────
 
-def _org_to_detail(o: Organization) -> OrgDetail:
+def _org_to_detail(o: Organization, admin_user: User | None = None) -> OrgDetail:
     return OrgDetail(
         id=str(o.id),
         name=o.name,
         slug=o.slug,
         is_active=o.is_active,
         created_at=o.created_at.isoformat(),
+        admin_email=admin_user.email if admin_user else None,
+        admin_initial_password=admin_user.initial_password if admin_user else None,
+        admin_password_changed_at=admin_user.password_changed_at.isoformat() if admin_user and admin_user.password_changed_at else None,
     )
 
 
@@ -208,8 +214,17 @@ async def list_organizations(
     result = await db.execute(data_q)
     orgs = result.scalars().all()
 
+    org_ids = [o.id for o in orgs]
+    admins = {}
+    if org_ids:
+        # Fetch first admin for each retrieved organization
+        admin_result = await db.execute(select(User).where(User.org_id.in_(org_ids), User.role == "admin"))
+        for u in admin_result.scalars().all():
+            if u.org_id not in admins:
+                admins[u.org_id] = u
+
     return PaginatedOrgsResponse(
-        items=[_org_to_detail(o) for o in orgs],
+        items=[_org_to_detail(o, admins.get(o.id)) for o in orgs],
         total=total,
         limit=limit,
         offset=offset,
@@ -224,6 +239,7 @@ async def list_organizations(
 )
 async def create_organization(
     body: OrgCreateRequest,
+    request: Request,
     _super_admin: User = Depends(get_current_super_admin),
     db: AsyncSession = Depends(get_db),
 ) -> OrgCreateResponse:
@@ -243,15 +259,26 @@ async def create_organization(
         org_id=org.id,
         email=body.admin_email,
         password_hash=hash_password(body.admin_password),
+        initial_password=body.admin_password,
         role="admin",
     )
     db.add(admin)
     await db.commit()
     await db.refresh(org)
 
+    await record_event(
+        event_type="organization_created",
+        org_id=org.id,
+        user_id=_super_admin.id,
+        ip_address=request.client.host if request.client else None,
+        resource_type="organization",
+        resource_id=str(org.id),
+        details={"slug": body.org_slug, "admin_email": body.admin_email},
+    )
+
     logger.info("Super admin created org | org=%s admin=%s", org.slug, body.admin_email)
     return OrgCreateResponse(
-        organization=_org_to_detail(org),
+        organization=_org_to_detail(org, admin),
         admin_email=body.admin_email,
         message=f"Organization '{org.name}' created with admin '{body.admin_email}'.",
     )
@@ -286,6 +313,9 @@ async def get_organization_detail(
         select(func.count(User.id)).where(and_(User.org_id == org_uuid, User.role == "admin"))
     ) or 0
 
+    admin_result = await db.execute(select(User).where(and_(User.org_id == org_uuid, User.role == "admin")).limit(1))
+    admin_user = admin_result.scalar_one_or_none()
+
     return OrgDetailExtended(
         id=str(org.id),
         name=org.name,
@@ -294,6 +324,9 @@ async def get_organization_detail(
         created_at=org.created_at.isoformat(),
         total_users=total_users,
         total_admins=total_admins,
+        admin_email=admin_user.email if admin_user else None,
+        admin_initial_password=admin_user.initial_password if admin_user else None,
+        admin_password_changed_at=admin_user.password_changed_at.isoformat() if admin_user and admin_user.password_changed_at else None,
     )
 
 
@@ -345,14 +378,14 @@ async def update_organization(
 @router.delete(
     "/organizations/{org_id}",
     response_model=OrgDetail,
-    summary="Soft-Delete Organization",
+    summary="Hard-Delete Organization",
 )
 async def delete_organization(
     org_id: str,
     _super_admin: User = Depends(get_current_super_admin),
     db: AsyncSession = Depends(get_db),
 ) -> OrgDetail:
-    """Soft-delete an organization by setting is_active = False."""
+    """Hard-delete an organization and all its data."""
     import uuid as _uuid
     try:
         org_uuid = _uuid.UUID(org_id)
@@ -364,9 +397,45 @@ async def delete_organization(
     if org is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found.")
 
-    org.is_active = False
+    # With ON DELETE CASCADE in User/Queue/Token, this will delete everything
+    await db.delete(org)
     await db.commit()
-    await db.refresh(org)
 
-    logger.info("Super admin soft-deleted org | org=%s", org.slug)
+    logger.info("Super admin PERMANENTLY deleted org | org=%s", org.slug)
     return _org_to_detail(org)
+
+
+@router.post("/organizations/{org_id}/reset-password")
+async def reset_org_admin_password(
+    org_id: str,
+    body: ResetPasswordRequest,
+    _super_admin: User = Depends(get_current_super_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Reset the password for an organization's primary admin."""
+    import uuid as _uuid
+    try:
+        org_uuid = _uuid.UUID(org_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid org_id.")
+
+    # Find the primary admin
+    result = await db.execute(
+        select(User).where(and_(User.org_id == org_uuid, User.role == "admin")).limit(1)
+    )
+    admin = result.scalar_one_or_none()
+
+    if not admin:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Admin user not found for this organization."
+        )
+
+    # Update password
+    admin.password_hash = hash_password(body.new_password)
+    admin.initial_password = body.new_password
+    admin.password_changed_at = None  # Reset change status since super-admin set a new "initial"
+    
+    await db.commit()
+
+    return {"message": f"Password reset successfully for {admin.email}"}

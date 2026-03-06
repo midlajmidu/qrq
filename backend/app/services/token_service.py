@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.queue import Queue
 from app.models.token import Token, TokenStatus
-from app.schemas.queue import JoinResponse, NextResponse
+from app.schemas.queue import JoinResponse, NextResponse, JoinRequest
 from app.websocket.connection_manager import manager as ws_manager
 from app.websocket.pubsub import publish_queue_update
 from app.websocket.helpers import build_queue_snapshot
@@ -126,10 +126,12 @@ async def join_queue(
     db: AsyncSession,
     *,
     queue_id: uuid.UUID,
+    data: JoinRequest,
 ) -> JoinResponse:
     """
-    Atomically assign the next token number. 
-    Note: Caller must handle commit and background notification.
+    Atomically assign the next token number.
+    Stores customer name/age/phone on the token row.
+    Caller must handle commit and background notification.
     """
     queue = await _lock_queue(db, queue_id)
 
@@ -144,6 +146,9 @@ async def join_queue(
         queue_id=queue.id,
         token_number=new_number,
         status=TokenStatus.waiting,
+        customer_name=data.name.strip(),
+        customer_age=data.age,
+        customer_phone=data.phone.strip(),
     )
     db.add(token)
     await db.flush()

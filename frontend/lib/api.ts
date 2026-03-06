@@ -17,6 +17,7 @@ import { logger } from "@/lib/logger";
 import type {
     ApiErrorResponse,
     HealthResponse,
+    JoinRequest,
     JoinResponse,
     ListOrgsParams,
     LoginRequest,
@@ -40,6 +41,11 @@ import type {
     TokenDetail,
     TokenResponse,
     PublicTokenResponse,
+    OrganizationSettingsResponse,
+    OrganizationSettingsUpdate,
+    ChangePasswordRequest,
+    ResetPasswordRequest,
+    SuccessResponse,
 } from "@/types/api";
 
 // ── Error class ──────────────────────────────────────────────────
@@ -130,8 +136,13 @@ async function request<T>(
         // 401 → auto-logout
         if (resp.status === 401) {
             removeToken();
-            if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-                window.location.href = "/login";
+            if (typeof window !== "undefined") {
+                const isSuperAdminPath = window.location.pathname.startsWith("/super-admin");
+                const isAlreadyonLogin = window.location.pathname.includes("/login");
+
+                if (!isAlreadyonLogin) {
+                    window.location.href = isSuperAdminPath ? "/super-admin/login" : "/login";
+                }
             }
         }
 
@@ -201,15 +212,17 @@ export const api = {
     },
 
     // ── Token operations ─────────────────────────────────────────
-    joinQueue(queueId: string): Promise<JoinResponse> {
-        return request<JoinResponse>(`/queues/${queueId}/join`, {
+    joinQueue(queueId: string, data: JoinRequest): Promise<JoinResponse> {
+        return request<JoinResponse>(`/queues/${queueId}/tokens`, {
             method: "POST",
+            body: JSON.stringify(data),
         });
     },
 
-    adminJoin(queueId: string): Promise<JoinResponse> {
+    adminJoin(queueId: string, data: JoinRequest): Promise<JoinResponse> {
         return request<JoinResponse>(`/queues/${queueId}/admin-join`, {
             method: "POST",
+            body: JSON.stringify(data),
         });
     },
 
@@ -329,9 +342,36 @@ export const api = {
         });
     },
 
-    softDeleteOrganization(orgId: string): Promise<OrgDetail> {
+    deleteOrganization(orgId: string): Promise<OrgDetail> {
         return request<OrgDetail>(`/super-admin/organizations/${orgId}`, {
             method: "DELETE",
+        });
+    },
+
+    // ── Organization Settings ────────────────────────────────────────
+
+    getOrganizationSettings(): Promise<OrganizationSettingsResponse> {
+        return request<OrganizationSettingsResponse>("/organization/settings");
+    },
+
+    updateOrganizationSettings(data: OrganizationSettingsUpdate): Promise<OrganizationSettingsResponse> {
+        return request<OrganizationSettingsResponse>("/organization/settings", {
+            method: "PUT",
+            body: JSON.stringify(data),
+        });
+    },
+
+    changePassword(data: ChangePasswordRequest): Promise<SuccessResponse> {
+        return request<SuccessResponse>("/organization/change-password", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    resetOrgPassword(orgId: string, data: ResetPasswordRequest): Promise<SuccessResponse> {
+        return request<SuccessResponse>(`/super-admin/organizations/${orgId}/reset-password`, {
+            method: "POST",
+            body: JSON.stringify(data),
         });
     },
 } as const;

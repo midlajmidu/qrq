@@ -19,7 +19,7 @@ export interface TokenResponse {
 // ── JWT Payload (decoded client-side) ────────────────────────────
 export interface JwtPayload {
     sub: string;       // user_id
-    org_id: string;
+    org_id: string | null;
     role: string;
     exp: number;       // UNIX timestamp
 }
@@ -51,9 +51,18 @@ export interface TokenDetail {
     status: TokenStatus;
     created_at: string;
     served_at: string | null;
+    customer_name: string;
+    customer_age: number | null;
+    customer_phone: string;
 }
 
 // ── Join ─────────────────────────────────────────────────────────
+export interface JoinRequest {
+    name: string;
+    age?: number;
+    phone: string;
+}
+
 export interface JoinResponse {
     token_number: number;
     position: number;
@@ -64,6 +73,9 @@ export interface JoinResponse {
 export interface PublicTokenResponse {
     token_number: number;
     status: TokenStatus;
+    customer_name: string;
+    customer_age: number | null;
+    customer_phone: string;
 }
 
 // ── Admin Next ───────────────────────────────────────────────────
@@ -81,12 +93,18 @@ export interface RecentToken {
     token_number: number;
     status: TokenStatus;
     served_at: string | null;
+    customer_name: string;
+    customer_age: number | null;
+    customer_phone: string;
 }
 
 export interface WaitingToken {
     id: string;
     token_number: number;
     status: TokenStatus;
+    customer_name: string;
+    customer_age: number | null;
+    customer_phone: string;
 }
 
 export interface QueueSnapshot {
@@ -96,6 +114,12 @@ export interface QueueSnapshot {
     prefix: string;
     is_active: boolean;
     current_serving: number;
+    serving_details: {
+        token_number: number;
+        customer_name: string;
+        customer_age: number | null;
+        customer_phone: string;
+    } | null;
     waiting_count: number;
     last_called: number;
     total_issued: number;
@@ -174,6 +198,9 @@ export interface OrgDetail {
     slug: string;
     is_active: boolean;
     created_at: string;
+    admin_email?: string | null;
+    admin_initial_password?: string | null;
+    admin_password_changed_at?: string | null;
 }
 
 export interface OrgDetailExtended extends OrgDetail {
@@ -219,4 +246,32 @@ export interface ListOrgsParams {
     offset?: number;
     sort_by?: SortBy;
     sort_order?: SortOrder;
+}
+
+// ── Organization Settings ───────────────────────────────────────
+export interface OrganizationSettingsResponse {
+    name: string;
+    slug: string;
+    email: string;
+    address: string | null;
+    phone_number: string | null;
+}
+
+export interface OrganizationSettingsUpdate {
+    name: string;
+    address: string | null;
+    phone_number: string | null;
+}
+
+export interface ChangePasswordRequest {
+    current_password: string;
+    new_password: string;
+}
+
+export interface ResetPasswordRequest {
+    new_password: string;
+}
+
+export interface SuccessResponse {
+    message: string;
 }

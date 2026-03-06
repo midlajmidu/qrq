@@ -64,6 +64,7 @@ function TableSkeleton() {
                 <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4"><div className="h-4 bg-slate-700 rounded w-32" /></td>
                     <td className="px-6 py-4"><div className="h-4 bg-slate-700 rounded w-24 font-mono" /></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-700 rounded w-40" /></td>
                     <td className="px-6 py-4"><div className="h-5 bg-slate-700 rounded-full w-16" /></td>
                     <td className="px-6 py-4"><div className="h-4 bg-slate-700 rounded w-20" /></td>
                     <td className="px-6 py-4"><div className="h-8 bg-slate-700 rounded w-16 mx-auto" /></td>
@@ -163,15 +164,15 @@ function SecureDeleteModal({ org, onClose, onConfirm, isDeleting }: { org: OrgDe
             <div className="relative w-full max-w-sm bg-slate-800 border border-red-500/30 rounded-2xl shadow-2xl p-6 space-y-5">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-red-500/15 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.834-1.964-.834-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                        <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </div>
                     <div>
-                        <h2 className="text-base font-semibold text-white">Deactivate Organization</h2>
-                        <p className="text-xs text-slate-400 mt-0.5">This action is reversible via the Edit modal.</p>
+                        <h2 className="text-base font-semibold text-white">Delete Organization</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">This action is permanent and cannot be undone.</p>
                     </div>
                 </div>
                 <p className="text-sm text-slate-300">
-                    To confirm, type the organization name exactly as shown:
+                    To permanently delete this organization and all its data, type its name:
                     <span className="block mt-1 font-mono font-semibold text-white bg-slate-900/60 rounded-lg px-3 py-1.5 mt-2 border border-slate-700 select-all">{org.name}</span>
                 </p>
                 <div>
@@ -188,7 +189,7 @@ function SecureDeleteModal({ org, onClose, onConfirm, isDeleting }: { org: OrgDe
                 <div className="flex gap-3">
                     <button type="button" onClick={onClose} disabled={isDeleting} className="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold rounded-xl transition-colors">Cancel</button>
                     <button type="button" onClick={onConfirm} disabled={isDeleting || !matches} className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-red-600/20 disabled:opacity-40 disabled:cursor-not-allowed">
-                        {isDeleting ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Deactivating...</span> : "Deactivate"}
+                        {isDeleting ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Deleting...</span> : "Delete Permanently"}
                     </button>
                 </div>
             </div>
@@ -259,6 +260,7 @@ export default function SuperAdminDashboard() {
 
     // Create form
     const [form, setForm] = useState<OrgCreateRequest>({ org_name: "", org_slug: "", admin_email: "", admin_password: "" });
+    const [showAdminPassword, setShowAdminPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -351,12 +353,12 @@ export default function SuperAdminDashboard() {
         if (!deleteOrg) return;
         setIsDeleting(true);
         try {
-            const updated = await api.softDeleteOrganization(deleteOrg.id);
-            setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
+            await api.deleteOrganization(deleteOrg.id);
+            setOrgs(prev => prev.filter(o => o.id !== deleteOrg.id));
             setDeleteOrg(null);
             loadStats();
         } catch (err) {
-            alert(err instanceof ApiError ? err.detail : "Failed to deactivate organization.");
+            alert(err instanceof ApiError ? err.detail : "Failed to delete organization.");
         } finally { setIsDeleting(false); }
     }, [deleteOrg, loadStats]);
 
@@ -419,8 +421,38 @@ export default function SuperAdminDashboard() {
                                     <input id="admin-email" type="email" value={form.admin_email} onChange={(e) => setForm(f => ({ ...f, admin_email: e.target.value }))} placeholder="admin@sunrise-clinic.com" required autoComplete="off" disabled={isSubmitting} className="w-full rounded-xl bg-slate-900/60 border border-slate-600 text-white placeholder-slate-500 px-3.5 py-2.5 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors" />
                                 </div>
                                 <div>
-                                    <label htmlFor="admin-password" className="block text-sm font-medium text-slate-300 mb-1.5">Admin Password</label>
-                                    <input id="admin-password" type="password" value={form.admin_password} onChange={(e) => setForm(f => ({ ...f, admin_password: e.target.value }))} placeholder="••••••••" required autoComplete="new-password" minLength={6} disabled={isSubmitting} className="w-full rounded-xl bg-slate-900/60 border border-slate-600 text-white placeholder-slate-500 px-3.5 py-2.5 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors" />
+                                    <label htmlFor="admin-password" title="Password" className="block text-sm font-medium text-slate-300 mb-1.5">Admin Password</label>
+                                    <div className="relative">
+                                        <input
+                                            id="admin-password"
+                                            type={showAdminPassword ? "text" : "password"}
+                                            value={form.admin_password}
+                                            onChange={(e) => setForm(f => ({ ...f, admin_password: e.target.value }))}
+                                            placeholder="••••••••"
+                                            required
+                                            autoComplete="new-password"
+                                            minLength={6}
+                                            disabled={isSubmitting}
+                                            className="w-full rounded-xl bg-slate-900/60 border border-slate-600 text-white placeholder-slate-500 pl-3.5 pr-10 py-2.5 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-colors"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAdminPassword(!showAdminPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 focus:outline-none"
+                                            aria-label={showAdminPassword ? "Hide password" : "Show password"}
+                                        >
+                                            {showAdminPassword ? (
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                                 <button type="submit" disabled={isSubmitting || !form.org_name || !form.org_slug || !form.admin_email || !form.admin_password} className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
                                     {isSubmitting ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</span> : <span className="flex items-center justify-center gap-2"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>Create Organization</span>}
@@ -469,6 +501,7 @@ export default function SuperAdminDashboard() {
                                         <tr className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-700/50">
                                             <SortableHeader col="name" label="Name" />
                                             <th className="px-6 py-3">Slug</th>
+                                            <th className="px-6 py-3">Admin Info</th>
                                             <SortableHeader col="is_active" label="Status" />
                                             <SortableHeader col="created_at" label="Created" />
                                             <th className="px-6 py-3 text-center">Actions</th>
@@ -477,7 +510,7 @@ export default function SuperAdminDashboard() {
                                     {isLoadingOrgs ? (
                                         <TableSkeleton />
                                     ) : orgs.length === 0 ? (
-                                        <tbody><tr><td colSpan={5} className="text-center py-16 text-slate-400">{debouncedSearch ? `No results for "${debouncedSearch}"` : "No organizations yet"}</td></tr></tbody>
+                                        <tbody><tr><td colSpan={6} className="text-center py-16 text-slate-400">{debouncedSearch ? `No results for "${debouncedSearch}"` : "No organizations yet"}</td></tr></tbody>
                                     ) : (
                                         <tbody className="divide-y divide-slate-700/40">
                                             {orgs.map((org) => (
@@ -491,6 +524,29 @@ export default function SuperAdminDashboard() {
                                                         </button>
                                                     </td>
                                                     <td className="px-6 py-4 font-mono text-slate-400 text-xs">{org.slug}</td>
+                                                    <td className="px-6 py-4">
+                                                        {org.admin_email ? (
+                                                            <div className="flex flex-col gap-1.5 align-top">
+                                                                <span className="text-sm text-slate-200 font-medium">{org.admin_email}</span>
+                                                                <div className="flex items-center gap-1 min-h-[22px]">
+                                                                    {org.admin_password_changed_at ? (
+                                                                        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 shadow-sm" title={`Password changed on ${fmt(org.admin_password_changed_at)}`}>
+                                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                                            Password Changed
+                                                                        </span>
+                                                                    ) : org.admin_initial_password && (
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="inline-flex items-center gap-1 text-xs text-slate-400 bg-slate-900/80 px-2 py-1 rounded-md border border-slate-700/80 font-mono shadow-inner select-all">
+                                                                                {org.admin_initial_password}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-xs text-slate-500 italic">No admin assigned</span>
+                                                        )}
+                                                    </td>
                                                     <td className="px-6 py-4"><Badge active={org.is_active} /></td>
                                                     <td className="px-6 py-4 text-slate-500">{fmt(org.created_at)}</td>
                                                     <td className="px-6 py-4">
