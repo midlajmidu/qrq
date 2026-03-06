@@ -2,6 +2,7 @@
 
 import React, { use, useState, useEffect, useCallback, useRef } from "react";
 import { useQueueSocket } from "@/hooks/useQueueSocket";
+import { playQueueSound } from "@/utils/playSound";
 import type { RecentToken } from "@/types/api";
 
 interface PageProps {
@@ -33,7 +34,8 @@ export default function DisplayQueuePage({ params }: PageProps) {
             const enabled = localStorage.getItem("display_sound_enabled") === "true";
             setSoundEnabled(enabled);
 
-            const audio = new Audio("/sounds/mixkit-confirmation-tone-2867.wav");
+            // Pre-warm the audio context by loading the ringtone
+            const audio = new Audio("/sounds/ringtone-you-would-be-glad-to-know.mp3");
             audio.preload = "auto";
             audio.volume = 1.0;
             audioRef.current = audio;
