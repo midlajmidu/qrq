@@ -25,6 +25,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Delete super_admin users before restoring NOT NULL constraint
+    op.execute("DELETE FROM users WHERE org_id IS NULL")
     op.alter_column('users', 'org_id',
                existing_type=sa.UUID(),
                nullable=False)
