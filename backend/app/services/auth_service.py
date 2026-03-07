@@ -87,6 +87,7 @@ async def authenticate_user(
         user_id=str(user.id),
         org_id=str(org.id),
         role=user.role,
+        email=user.email,
     )
 
     logger.info("Login successful | user_id=%s org=%s role=%s", user.id, org_slug, user.role)
@@ -135,6 +136,7 @@ async def authenticate_super_admin(
         user_id=str(user.id),
         org_id=None,
         role=user.role,
+        email=user.email,
     )
     logger.info("Super-admin login successful | user_id=%s", user.id)
     return token

@@ -99,7 +99,7 @@ export function decodeToken(token: string): JwtPayload | null {
         const payload = JSON.parse(atob(parts[1])) as JwtPayload;
 
         // Validate required fields exist
-        if (!payload.sub || !payload.role || !payload.exp || payload.org_id === undefined) {
+        if (!payload.sub || !payload.role || !payload.exp || payload.org_id === undefined || !payload.email) {
             return null;
         }
 

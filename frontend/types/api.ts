@@ -22,6 +22,7 @@ export interface JwtPayload {
     org_id: string | null;
     role: string;
     exp: number;       // UNIX timestamp
+    email: string;
 }
 
 // ── Queue ────────────────────────────────────────────────────────
