@@ -65,6 +65,9 @@ class Token(Base):
         nullable=False,
         index=True,
     )
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False, index=True
+    )
     token_number: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[TokenStatus] = mapped_column(
         SAEnum(TokenStatus, name="tokenstatus"),

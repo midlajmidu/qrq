@@ -68,6 +68,7 @@ export interface JoinResponse {
     position: number;
     current_serving: number;
     queue_prefix: string;
+    session_id: string;  // session the token was created in
 }
 
 export interface PublicTokenResponse {
@@ -76,6 +77,7 @@ export interface PublicTokenResponse {
     customer_name: string;
     customer_age: number | null;
     customer_phone: string;
+    session_id: string;
 }
 
 // ── Admin Next ───────────────────────────────────────────────────
@@ -110,6 +112,7 @@ export interface WaitingToken {
 export interface QueueSnapshot {
     type?: string;                 // "queue_snapshot" on initial, "queue_update" on update
     queue_id: string;
+    session_id: string;            // rotates on every queue reset
     queue_name: string;
     prefix: string;
     is_active: boolean;

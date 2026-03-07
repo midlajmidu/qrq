@@ -44,6 +44,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.critical("Failed to connect to PostgreSQL: %s", exc)
         raise
 
+    # Bootstrap initial admin/org
+    from app.db.bootstrap import bootstrap_db
+    try:
+        await bootstrap_db()
+    except Exception as exc:
+        logger.critical("Failed to bootstrap database: %s", exc)
+        raise
+
     # Auto-create audit table if it doesn't exist
     try:
         from app.db.base_class import AuditBase

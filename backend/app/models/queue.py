@@ -42,6 +42,9 @@ class Queue(Base):
         nullable=False,
         index=True,
     )
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False, default=uuid.uuid4, index=True
+    )
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     prefix: Mapped[str] = mapped_column(String(10), nullable=False, default="A")
     current_token_number: Mapped[int] = mapped_column(

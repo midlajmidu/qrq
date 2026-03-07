@@ -38,11 +38,11 @@ class User(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
-    org_id: Mapped[uuid.UUID] = mapped_column(
+    org_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,           # mandatory: ALL queries filter by org_id
+        nullable=True,
+        index=True,           # mandatory: ALL queries filter by org_id (unless super_admin)
     )
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)

@@ -144,6 +144,7 @@ async def join_queue(
     token = Token(
         org_id=queue.org_id,
         queue_id=queue.id,
+        session_id=queue.session_id,  # ← inherit current session
         token_number=new_number,
         status=TokenStatus.waiting,
         customer_name=data.name.strip(),
@@ -162,6 +163,7 @@ async def join_queue(
         position=position,
         current_serving=current_serving,
         queue_prefix=queue.prefix,
+        session_id=queue.session_id,
     )
 
 

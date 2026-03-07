@@ -108,7 +108,13 @@ async def reset_queue(
     queue_id: uuid.UUID,
     org_id: uuid.UUID,
 ) -> Queue:
-    """Reset a queue."""
+    """
+    Reset a queue for a new day/session.
+
+    This generates a **new session_id** so that any token pages still open
+    from the previous session will detect the mismatch and stop tracking.
+    All previous tokens are hard-deleted to reclaim storage.
+    """
     from sqlalchemy import delete
     result = await db.execute(
         select(Queue).where(
@@ -120,8 +126,16 @@ async def reset_queue(
     if queue is None:
         raise ValueError(f"Queue {queue_id} not found")
 
+    # Delete all tokens from the old session
     await db.execute(delete(Token).where(Token.queue_id == queue_id))
+
+    # Rotate the session and reset counters
+    queue.session_id = uuid.uuid4()
     queue.current_token_number = 0
     await db.commit()
-    logger.info("Queue reset | id=%s org=%s", queue_id, org_id)
+    logger.info(
+        "Queue reset | id=%s org=%s new_session=%s",
+        queue_id, org_id, queue.session_id,
+    )
     return queue
+
