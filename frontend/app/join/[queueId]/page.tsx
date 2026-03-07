@@ -245,18 +245,12 @@ export default function JoinQueuePage({ params }: PageProps) {
 
     // ── Remaining-count milestone: sound + browser notification ────
     useEffect(() => {
-<<<<<<< HEAD
-        if (!joinData?.token_number || !live?.current_serving) return;
-        if (!interactedRef.current) return; // needs prior user interaction
-
-=======
         if (!joinData?.token_number || !live?.current_serving || !joinData?.session_id) return;
         if (!interactedRef.current) return; // needs prior user interaction
 
         // Session isolation check: Do not fire alerts for old sessions
         if (live?.session_id && live.session_id !== joinData.session_id) return;
 
->>>>>>> features
         const remaining = joinData.token_number - live.current_serving;
 
         // Sound (fires if soundEnabled)
@@ -273,11 +267,7 @@ export default function JoinQueuePage({ params }: PageProps) {
         // Browser notification + sound via utility (handles its own enabled check)
         checkAndNotifyMilestone(joinData.token_number, live.current_serving, triggeredRef.current);
 
-<<<<<<< HEAD
-    }, [joinData?.token_number, live?.current_serving, soundEnabled]);
-=======
     }, [joinData?.token_number, joinData?.session_id, live?.current_serving, live?.session_id, soundEnabled]);
->>>>>>> features
 
     const queueClosed = live?.is_active === false;
     const queueName = live?.queue_name || "Queue";
