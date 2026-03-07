@@ -36,6 +36,8 @@ export default function QueueDetailPage({ params }: PageProps) {
     const [inviteNumber, setInviteNumber] = useState("");
     const [removeNumber, setRemoveNumber] = useState("");
     const [tokenToRemove, setTokenToRemove] = useState<{ id: string, number: number } | null>(null);
+    const [announcementInput, setAnnouncementInput] = useState("");
+    const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
     const [waitingSearch, setWaitingSearch] = useState("");
     const [recentSearch, setRecentSearch] = useState("");
     const [waitingPage, setWaitingPage] = useState(1);
@@ -265,6 +267,29 @@ export default function QueueDetailPage({ params }: PageProps) {
             setTokenToRemove(null);
         }
     }, [tokenToRemove, state?.prefix, toast]);
+
+    // ── Announcement ───────────────────────────────────────────────
+    useEffect(() => {
+        if (!isEditingAnnouncement) {
+            setAnnouncementInput(state?.announcement ?? initialQueue?.announcement ?? "");
+        }
+    }, [state?.announcement, initialQueue?.announcement, isEditingAnnouncement]);
+
+    const handleUpdateAnnouncement = useCallback(async (e: React.FormEvent) => {
+        e.preventDefault();
+        setActionLoading("announcement");
+        setActionError(null);
+        try {
+            await api.updateQueueAnnouncement(queueId, announcementInput.trim());
+            toast("Announcement updated", "success");
+            setIsEditingAnnouncement(false);
+        } catch (err: unknown) {
+            if (err instanceof ApiError) setActionError(err.detail);
+            else setActionError("Failed to update announcement");
+        } finally {
+            setActionLoading(null);
+        }
+    }, [queueId, announcementInput, toast]);
 
     // ── Keyboard shortcuts ─────────────────────────────────────────
     useEffect(() => {
@@ -519,6 +544,62 @@ export default function QueueDetailPage({ params }: PageProps) {
                                 </button>
                             </form>
                         </div>
+                    </div>
+
+                    {/* Announcement Control */}
+                    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-widest">Public Announcement</h3>
+                            {(state?.announcement || initialQueue?.announcement) && !isEditingAnnouncement && (
+                                <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Active</span>
+                            )}
+                        </div>
+
+                        {isEditingAnnouncement ? (
+                            <form onSubmit={handleUpdateAnnouncement} className="space-y-3">
+                                <textarea
+                                    value={announcementInput}
+                                    onChange={(e) => setAnnouncementInput(e.target.value)}
+                                    placeholder="Enter a message to display to all customers waiting..."
+                                    disabled={isDisabled || actionLoading === "announcement"}
+                                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
+                                />
+                                <div className="flex gap-2">
+                                    <button
+                                        type="submit"
+                                        disabled={isDisabled || actionLoading === "announcement"}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        {actionLoading === "announcement" ? "Saving..." : "Save"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditingAnnouncement(false)}
+                                        disabled={isDisabled || actionLoading === "announcement"}
+                                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <div>
+                                {(state?.announcement ?? initialQueue?.announcement) ? (
+                                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-gray-800 text-sm whitespace-pre-wrap mb-3">
+                                        {state?.announcement ?? initialQueue?.announcement}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-400 italic mb-3">No active announcement.</p>
+                                )}
+                                <button
+                                    onClick={() => setIsEditingAnnouncement(true)}
+                                    disabled={isDisabled}
+                                    className="px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
+                                >
+                                    {(state?.announcement ?? initialQueue?.announcement) ? "Edit Announcement" : "Set Announcement"}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Error banner */}

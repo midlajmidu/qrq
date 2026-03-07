@@ -172,6 +172,20 @@ export default function DisplayQueuePage({ params }: PageProps) {
                 </div>
             </div>
 
+            {/* Announcement Banner */}
+            {state?.announcement && (
+                <div className="w-full max-w-7xl mx-auto px-6 lg:px-8 mb-4 shrink-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="bg-blue-900/40 backdrop-blur border border-blue-500/30 rounded-xl p-4 lg:p-5 flex items-center gap-4 shadow-lg shadow-blue-900/20">
+                        <div className="shrink-0 text-blue-400 bg-blue-500/10 p-2 rounded-lg">
+                            <svg className="w-6 h-6 lg:w-8 lg:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                        </div>
+                        <p className="text-white text-base lg:text-xl font-medium leading-snug tracking-wide">
+                            {state.announcement}
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Footer — fixed position */}
             <div className="text-center py-3 text-gray-700 text-xs font-medium tracking-wider shrink-0">
                 qrq • Queue Management System

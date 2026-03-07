@@ -18,11 +18,16 @@ class QueueCreate(BaseModel):
     prefix: str = Field(default="A", min_length=1, max_length=10)
 
 
+class AnnouncementUpdate(BaseModel):
+    announcement: Optional[str] = Field(None, max_length=500)
+
+
 class QueueResponse(BaseModel):
     id: uuid.UUID
     org_id: uuid.UUID
     name: str
     prefix: str
+    announcement: Optional[str] = None
     current_token_number: int
     is_active: bool
     created_at: datetime

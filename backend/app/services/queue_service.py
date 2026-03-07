@@ -90,6 +90,20 @@ async def set_queue_active(
     await db.refresh(queue)
     return queue
 
+async def set_queue_announcement(
+    db: AsyncSession,
+    *,
+    queue_id: uuid.UUID,
+    org_id: uuid.UUID,
+    announcement: str,
+) -> Queue:
+    queue = await get_queue_or_404(db, queue_id=queue_id, org_id=org_id)
+    queue.announcement = announcement
+    await db.commit()
+    await db.refresh(queue)
+    return queue
+
+
 async def delete_queue(
     db: AsyncSession,
     *,

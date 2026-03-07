@@ -119,6 +119,7 @@ async def build_queue_snapshot(
         "session_id": str(queue.session_id),   # ← session isolation key
         "queue_name": queue.name,
         "prefix": queue.prefix,
+        "announcement": queue.announcement,
         "is_active": queue.is_active,
         "current_serving": current_serving,
         "serving_details": serving_details,

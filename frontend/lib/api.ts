@@ -199,6 +199,13 @@ export const api = {
         });
     },
 
+    updateQueueAnnouncement(queueId: string, announcement: string): Promise<QueueResponse> {
+        return request<QueueResponse>(`/queues/${queueId}/announcement`, {
+            method: "PATCH",
+            body: JSON.stringify({ announcement }),
+        });
+    },
+
     deleteQueue(queueId: string): Promise<void> {
         return request<void>(`/queues/${queueId}`, {
             method: "DELETE",

@@ -30,6 +30,7 @@ export interface QueueResponse {
     org_id: string;
     name: string;
     prefix: string;
+    announcement: string | null;
     current_token_number: number;
     is_active: boolean;
     created_at: string;
@@ -115,6 +116,7 @@ export interface QueueSnapshot {
     session_id: string;            // rotates on every queue reset
     queue_name: string;
     prefix: string;
+    announcement: string | null;
     is_active: boolean;
     current_serving: number;
     serving_details: {

@@ -28,6 +28,7 @@ from app.schemas.queue import (
     QueueCreate,
     QueueResponse,
     PublicTokenResponse,
+    AnnouncementUpdate,
 )
 from app.services import queue_service, token_service
 from app.middleware.rate_limiter import join_rate_limit, api_rate_limit
@@ -126,6 +127,34 @@ async def toggle_queue_active(
     try:
         queue = await queue_service.set_queue_active(
             db, queue_id=queue_id, org_id=current_user.org_id, is_active=is_active
+        )
+    except ValueError as exc:
+        _raise_404(exc)
+    return QueueResponse.model_validate(queue)
+
+
+@router.patch(
+    "/{queue_id}/announcement",
+    response_model=QueueResponse,
+    summary="Update Queue Announcement",
+)
+async def update_queue_announcement(
+    queue_id: uuid.UUID,
+    body: AnnouncementUpdate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> QueueResponse:
+    """Update the announcement for a queue."""
+    try:
+        announcement = body.announcement or ""
+        queue = await queue_service.set_queue_announcement(
+            db, queue_id=queue_id, org_id=current_user.org_id, announcement=announcement
+        )
+        background_tasks.add_task(
+            token_service.notify_queue_update,
+            queue_id=queue_id,
+            org_id=current_user.org_id
         )
     except ValueError as exc:
         _raise_404(exc)
