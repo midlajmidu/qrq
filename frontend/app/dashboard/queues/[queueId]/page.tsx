@@ -127,19 +127,31 @@ export default function QueueDetailPage({ params }: PageProps) {
         }
     }, [toast, setErrorWithTimer]);
 
-    const handleNext = useCallback(() => {
-        const nextToken = (state?.current_serving ?? 0) + 1;
+    const handleNext = useCallback(async () => {
         const prefix = state?.prefix ?? "";
-        performAction("next", () => api.callNext(queueId, "done"), `${prefix}${nextToken} is now serving`);
-    }, [performAction, queueId, state?.current_serving, state?.prefix]);
+        await performAction("next", async () => {
+            const res = await api.callNext(queueId, "done");
+            if ("message" in res) {
+                toast(res.message, "info");
+            } else {
+                toast(`${prefix}${res.serving} is now serving`, "success");
+            }
+        });
+    }, [performAction, queueId, state?.prefix, toast]);
 
     const handleSkip = useCallback(() => setShowSkipConfirm(true), []);
-    const handleConfirmSkip = useCallback(() => {
+    const handleConfirmSkip = useCallback(async () => {
         setShowSkipConfirm(false);
-        const current = state?.current_serving ?? 0;
         const prefix = state?.prefix ?? "";
-        performAction("skip", () => api.callNext(queueId, "skipped"), `${prefix}${current} skipped`);
-    }, [performAction, queueId, state?.current_serving, state?.prefix]);
+        await performAction("skip", async () => {
+            const res = await api.callNext(queueId, "skipped");
+            if ("message" in res) {
+                toast(res.message, "info");
+            } else {
+                toast(`${prefix}${res.serving} is now serving`, "success");
+            }
+        });
+    }, [performAction, queueId, state?.prefix, toast]);
 
     const handleReset = useCallback(async () => {
         setResetting(true);
@@ -415,7 +427,11 @@ export default function QueueDetailPage({ params }: PageProps) {
                         </button>
 
                         <button
-                            onClick={() => performAction("done", () => api.callNext(queueId, "done"), `Completed & called next`)}
+                            onClick={() => performAction("done", async () => {
+                                const res = await api.callNext(queueId, "done");
+                                if ("message" in res) toast(res.message, "info");
+                                else toast(`${state?.prefix || ""}${res.serving} is now serving`, "success");
+                            })}
                             disabled={isDisabled}
                             aria-label="Mark done and call next token"
                             className="py-4 px-6 bg-white text-emerald-700 font-bold text-lg rounded-xl border border-emerald-200 hover:bg-emerald-50 active:bg-emerald-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
@@ -509,7 +525,7 @@ export default function QueueDetailPage({ params }: PageProps) {
                     {/* Disconnected warning */}
                     {status === "disconnected" && (
                         <div role="alert" className="bg-amber-50 text-amber-800 px-4 py-3 rounded-lg border border-amber-200 text-sm">
-                            <strong>Connection lost.</strong> Actions are disabled until reconnection. Updates will resume automatically.
+                            <strong>Connection lost.</strong> Retrying connection to live updates. Manual actions are still available.
                         </div>
                     )}
 

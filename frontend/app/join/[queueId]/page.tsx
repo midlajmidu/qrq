@@ -133,7 +133,16 @@ export default function JoinQueuePage({ params }: PageProps) {
     useEffect(() => {
         let mounted = true;
         const fetchStatus = async () => {
-            if (!joinData?.token_number) return;
+            if (!joinData?.token_number || !joinData?.session_id) return;
+
+            // Session isolation check: if queue session changed, this token is expired.
+            if (live?.session_id && live.session_id !== joinData.session_id) {
+                if (mounted) {
+                    setTokenStatus("deleted");
+                    setError("This queue session has ended. Your token is no longer valid.");
+                }
+                return; // Stop processing, token is from old session
+            }
 
             let newStatus: TokenStatus | null = null;
 
@@ -152,9 +161,23 @@ export default function JoinQueuePage({ params }: PageProps) {
             try {
                 if (!newStatus) {
                     const res = await api.getPublicToken(queueId, joinData.token_number);
-                    newStatus = res.status;
+                    if (res.session_id !== joinData.session_id) {
+                        if (mounted) {
+                            newStatus = "deleted";
+                            setError("This queue session has ended. Your token is no longer valid.");
+                        }
+                    } else {
+                        newStatus = res.status;
+                    }
                 }
-            } catch { /* ignore */ }
+            } catch (err: unknown) {
+                if (err instanceof ApiError && err.status === 404) {
+                    if (mounted) {
+                        newStatus = "deleted";
+                        setError("This queue session has ended. Your token was removed.");
+                    }
+                }
+            }
 
             if (newStatus && mounted) {
                 setTokenStatus(newStatus);
@@ -222,8 +245,11 @@ export default function JoinQueuePage({ params }: PageProps) {
 
     // ── Remaining-count milestone: sound + browser notification ────
     useEffect(() => {
-        if (!joinData?.token_number || !live?.current_serving) return;
+        if (!joinData?.token_number || !live?.current_serving || !joinData?.session_id) return;
         if (!interactedRef.current) return; // needs prior user interaction
+
+        // Session isolation check: Do not fire alerts for old sessions
+        if (live?.session_id && live.session_id !== joinData.session_id) return;
 
         const remaining = joinData.token_number - live.current_serving;
 
@@ -241,7 +267,7 @@ export default function JoinQueuePage({ params }: PageProps) {
         // Browser notification + sound via utility (handles its own enabled check)
         checkAndNotifyMilestone(joinData.token_number, live.current_serving, triggeredRef.current);
 
-    }, [joinData?.token_number, live?.current_serving, soundEnabled]);
+    }, [joinData?.token_number, joinData?.session_id, live?.current_serving, live?.session_id, soundEnabled]);
 
     const queueClosed = live?.is_active === false;
     const queueName = live?.queue_name || "Queue";
@@ -366,7 +392,7 @@ export default function JoinQueuePage({ params }: PageProps) {
                             )}
                             {isDeleted && !isDone && !isMyTurn && (
                                 <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-200 text-center text-sm">
-                                    Your token has been removed from the waiting list.
+                                    {error ? error : "Your token has been removed from the waiting list."}
                                 </div>
                             )}
                             {alreadyServed && !isSkipped && !isDeleted && (

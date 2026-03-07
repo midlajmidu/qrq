@@ -50,6 +50,7 @@ class JoinResponse(BaseModel):
     position: int           # how many 'waiting' tokens are ahead
     current_serving: int    # the token_number currently being served (0 = none)
     queue_prefix: str
+    session_id: uuid.UUID
 
 
 class PublicTokenResponse(BaseModel):
@@ -59,6 +60,7 @@ class PublicTokenResponse(BaseModel):
     customer_name: str
     customer_age: Optional[int]
     customer_phone: str
+    session_id: uuid.UUID
 
     model_config = {"from_attributes": True}
 
