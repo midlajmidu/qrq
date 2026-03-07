@@ -6,7 +6,7 @@ import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useQueueSocket } from "@/hooks/useQueueSocket";
-import { getToken } from "@/lib/auth";
+import { getToken, getCurrentUser } from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import ConnectionBadge from "@/components/ConnectionBadge";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -20,6 +20,8 @@ interface PageProps {
 export default function QueueDetailPage({ params }: PageProps) {
     const { queueId } = use(params);
     const token = getToken();
+    const user = getCurrentUser();
+    const isStaff = user?.role === "staff";
     const { toast } = useToast();
 
     const { state, status } = useQueueSocket(queueId, { token: token || undefined });
@@ -334,15 +336,17 @@ export default function QueueDetailPage({ params }: PageProps) {
                     >
                         TV Display ↗
                     </Link>
-                    <Link
-                        href={`/join/${queueId}`}
-                        target="_blank"
-                        rel="noopener"
-                        className="text-xs font-medium text-gray-500 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                        aria-label="Open join page in new tab"
-                    >
-                        Join Page ↗
-                    </Link>
+                    {!isStaff && (
+                        <Link
+                            href={`/join/${queueId}`}
+                            target="_blank"
+                            rel="noopener"
+                            className="text-xs font-medium text-gray-500 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                            aria-label="Open join page in new tab"
+                        >
+                            Join Page ↗
+                        </Link>
+                    )}
                     <button
                         onClick={() => setShowResetConfirm(true)}
                         className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-100 flex items-center gap-1"
@@ -353,16 +357,18 @@ export default function QueueDetailPage({ params }: PageProps) {
                         </svg>
                         Reset
                     </button>
-                    <button
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-100 flex items-center gap-1"
-                        aria-label="Delete Queue"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Delete
-                    </button>
+                    {!isStaff && (
+                        <button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-100 flex items-center gap-1"
+                            aria-label="Delete Queue"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -540,7 +546,9 @@ export default function QueueDetailPage({ params }: PageProps) {
                 {/* Right column: QR Code, Waiting List & Recent Tokens */}
                 <div className="space-y-6">
                     {/* QR Code */}
-                    <QueueQRCode queueId={queueId} queueName={state?.queue_name || "Queue"} />
+                    {!isStaff && (
+                        <QueueQRCode queueId={queueId} queueName={state?.queue_name || "Queue"} />
+                    )}
 
                     {/* Waiting List */}
                     <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" aria-label="Waiting list">
