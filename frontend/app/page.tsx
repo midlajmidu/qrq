@@ -16,7 +16,7 @@ export default function Home() {
         </div>
 
         <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 mb-4">
-          qrq
+          Q4Queue
         </h1>
         <p className="text-xl text-gray-500 mb-10 max-w-lg mx-auto leading-relaxed">
           Real-time queue management for modern clinics, hospitals, and service counters.

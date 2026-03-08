@@ -334,17 +334,17 @@ export default function QueueDetailPage({ params }: PageProps) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
+                    <div className="min-w-0 pr-2">
+                        <h1 className="text-2xl font-bold text-gray-900 break-words mb-1">
                             {state?.queue_name || initialQueue?.name || "Loading..."}
                         </h1>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 break-words">
                             Prefix: <span className="font-mono font-semibold">{state?.prefix || initialQueue?.prefix || "—"}</span>
                             {" · "}
                             {(state?.is_active ?? initialQueue?.is_active) ? (
-                                <span className="text-emerald-600 font-medium">Active</span>
+                                <span className="text-emerald-600 font-medium whitespace-nowrap">Active</span>
                             ) : (
-                                <span className="text-red-500 font-medium">Inactive</span>
+                                <span className="text-red-500 font-medium whitespace-nowrap">Inactive</span>
                             )}
                         </p>
                     </div>
@@ -353,7 +353,7 @@ export default function QueueDetailPage({ params }: PageProps) {
                 <div className="flex items-center gap-3 flex-wrap">
                     <ConnectionBadge status={status} />
                     <Link
-                        href={`/display/${queueId}`}
+                        href={`/d/${queueId}`}
                         target="_blank"
                         rel="noopener"
                         className="text-xs font-medium text-gray-500 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -363,7 +363,7 @@ export default function QueueDetailPage({ params }: PageProps) {
                     </Link>
                     {!isStaff && (
                         <Link
-                            href={`/join/${queueId}`}
+                            href={`/j/${queueId}`}
                             target="_blank"
                             rel="noopener"
                             className="text-xs font-medium text-gray-500 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -406,19 +406,19 @@ export default function QueueDetailPage({ params }: PageProps) {
                         <p className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">
                             Now Serving
                         </p>
-                        <div className="text-8xl sm:text-9xl font-black text-blue-600 tabular-nums tracking-tight leading-none py-4" aria-live="polite" aria-atomic="true">
+                        <div className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-blue-600 tabular-nums tracking-tight leading-none py-4 break-words px-2 w-full max-w-full" aria-live="polite" aria-atomic="true">
                             {state?.prefix || ""}{state?.current_serving || 0}
                         </div>
 
                         {state?.serving_details && (
-                            <div className="mt-2 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                <p className="text-2xl font-bold text-gray-900">{state.serving_details.customer_name}</p>
-                                <div className="flex items-center justify-center gap-3 mt-1 text-sm text-gray-500 font-medium">
+                            <div className="mt-2 text-center animate-in fade-in slide-in-from-bottom-2 duration-500 w-full px-2">
+                                <p className="text-2xl font-bold text-gray-900 break-words">{state.serving_details.customer_name}</p>
+                                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-1 text-sm text-gray-500 font-medium">
                                     {state.serving_details.customer_age != null && (
                                         <span>Age: {state.serving_details.customer_age}</span>
                                     )}
-                                    {state.serving_details.customer_age != null && <span>•</span>}
-                                    <span>{state.serving_details.customer_phone}</span>
+                                    {state.serving_details.customer_age != null && <span className="hidden sm:inline">•</span>}
+                                    <span className="break-all">{state.serving_details.customer_phone}</span>
                                 </div>
                             </div>
                         )}
