@@ -18,7 +18,7 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: q4queue-redis
           property: connectionString
       - key: SECRET_KEY
@@ -49,15 +49,15 @@ services:
         value: "true"
     healthCheckPath: /
 
+  # ─── Redis (Key-Value) ───────────────────────────────────────────
+  - type: keyvalue
+    name: q4queue-redis
+    plan: free
+    region: oregon
+    ipAllowList: []
+
 # ─── Database ────────────────────────────────────────────────────
 databases:
   - name: q4queue-db
     plan: free
     region: oregon
-
-# ─── Redis ───────────────────────────────────────────────────────
-redis:
-  - name: q4queue-redis
-    plan: free
-    region: oregon
-    ipAllowList: []
