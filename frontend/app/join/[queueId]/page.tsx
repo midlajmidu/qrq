@@ -20,20 +20,24 @@ interface PageProps {
     params: Promise<{ queueId: string }>;
 }
 
-const STORAGE_PREFIX = "fc_join_";
+const STORAGE_KEY = (queueId: string) => `queue_token_${queueId}`;
 
-function saveJoinData(queueId: string, data: JoinResponse) {
+function saveTokenToStorage(queueId: string, tokenId: string) {
     try {
-        sessionStorage.setItem(`${STORAGE_PREFIX}${queueId}`, JSON.stringify(data));
+        localStorage.setItem(STORAGE_KEY(queueId), tokenId);
     } catch { /* SSR or storage unavailable */ }
 }
 
-function loadJoinData(queueId: string): JoinResponse | null {
+function getTokenFromStorage(queueId: string): string | null {
     try {
-        const raw = sessionStorage.getItem(`${STORAGE_PREFIX}${queueId}`);
-        if (raw) return JSON.parse(raw) as JoinResponse;
+        return localStorage.getItem(STORAGE_KEY(queueId));
+    } catch { return null; }
+}
+
+function clearTokenFromStorage(queueId: string) {
+    try {
+        localStorage.removeItem(STORAGE_KEY(queueId));
     } catch { /* ignore */ }
-    return null;
 }
 
 export default function JoinQueuePage({ params }: PageProps) {
@@ -121,10 +125,50 @@ export default function JoinQueuePage({ params }: PageProps) {
         if (next) interactedRef.current = true;
     }, [notifEnabled]);
 
-    // Restore from session on mount
+    // ── Restore from localStorage on mount ────────────────────────
     useEffect(() => {
-        const saved = loadJoinData(queueId);
-        if (saved) setJoinData(saved);
+        const tokenId = getTokenFromStorage(queueId);
+        if (!tokenId) return;
+
+        let mounted = true;
+        const attemptRestore = async () => {
+            try {
+                const restored = await api.restoreToken(tokenId);
+
+                // If it belongs to a different queue, ignore it
+                if (restored.queue_id !== queueId) {
+                    clearTokenFromStorage(queueId);
+                    return;
+                }
+
+                if (restored.status === "waiting" || restored.status === "serving") {
+                    if (mounted) {
+                        setJoinData({
+                            id: restored.id,
+                            token_number: restored.token_number,
+                            position: 0,
+                            current_serving: 0,
+                            queue_prefix: restored.queue_prefix,
+                            session_id: restored.session_id,
+                        });
+                        setTokenStatus(restored.status);
+                        // Reset milestone triggers for restored token
+                        triggeredRef.current = { five: false, two: false, turn: false };
+                    }
+                } else {
+                    // Token finished or skipped — clear it
+                    clearTokenFromStorage(queueId);
+                }
+            } catch (err) {
+                // If 404, the token is gone
+                if (err instanceof ApiError && err.status === 404) {
+                    clearTokenFromStorage(queueId);
+                }
+            }
+        };
+
+        attemptRestore();
+        return () => { mounted = false; };
     }, [queueId]);
 
     const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
@@ -182,6 +226,11 @@ export default function JoinQueuePage({ params }: PageProps) {
             if (newStatus && mounted) {
                 setTokenStatus(newStatus);
 
+                // Auto-clear storage if token reaches end state
+                if (newStatus === "done" || newStatus === "skipped" || newStatus === "deleted") {
+                    clearTokenFromStorage(queueId);
+                }
+
                 if (typeof window !== "undefined") {
                     const storageKey = `fc_audio_stage_${queueId}`;
                     const lastStage = sessionStorage.getItem(storageKey);
@@ -206,13 +255,37 @@ export default function JoinQueuePage({ params }: PageProps) {
         setIsJoining(true);
         setError(null);
         try {
+            // Re-check for existing token before calling join
+            const existingId = getTokenFromStorage(queueId);
+            if (existingId) {
+                try {
+                    const restored = await api.restoreToken(existingId);
+                    if (restored.status === "waiting" || restored.status === "serving") {
+                        setJoinData({
+                            id: restored.id,
+                            token_number: restored.token_number,
+                            position: 0,
+                            current_serving: 0,
+                            queue_prefix: restored.queue_prefix,
+                            session_id: restored.session_id,
+                        });
+                        setTokenStatus(restored.status);
+                        setIsJoining(false);
+                        return;
+                    }
+                } catch {
+                    // Restoration failed (e.g. token expired/not found), proceed to create new
+                    clearTokenFromStorage(queueId);
+                }
+            }
+
             const data = await api.joinQueue(queueId, {
                 name: customerName.trim(),
                 age: customerAge ? parseInt(customerAge, 10) : undefined,
                 phone: customerPhone.trim(),
             });
             setJoinData(data);
-            saveJoinData(queueId, data);
+            saveTokenToStorage(queueId, data.id);
             setTokenStatus("waiting");
             // User just interacted — unlock milestone autoplay
             interactedRef.current = true;

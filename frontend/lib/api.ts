@@ -41,6 +41,7 @@ import type {
     TokenDetail,
     TokenResponse,
     PublicTokenResponse,
+    TokenRestoreResponse,
     OrganizationSettingsResponse,
     OrganizationSettingsUpdate,
     ChangePasswordRequest,
@@ -251,6 +252,10 @@ export const api = {
 
     getToken(tokenId: string): Promise<TokenDetail> {
         return request<TokenDetail>(`/tokens/${tokenId}`);
+    },
+
+    restoreToken(tokenId: string): Promise<TokenRestoreResponse> {
+        return request<TokenRestoreResponse>(`/tokens/${tokenId}`);
     },
 
     skipToken(tokenId: string): Promise<TokenDetail> {
