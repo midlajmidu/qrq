@@ -179,7 +179,7 @@ export default function QueueDetailPage({ params }: PageProps) {
         try {
             await api.deleteQueue(queueId);
             toast("Queue deleted successfully", "success");
-            router.push("/dashboard");
+            router.push("/dashboard/queues");
         } catch (err: unknown) {
             if (err instanceof ApiError) setActionError(err.detail);
             else setActionError("Failed to delete queue");
@@ -326,8 +326,8 @@ export default function QueueDetailPage({ params }: PageProps) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                     <Link
-                        href="/dashboard"
-                        aria-label="Back to dashboard"
+                        href="/dashboard/queues"
+                        aria-label="Back to queues"
                         className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md p-1"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -628,7 +628,11 @@ export default function QueueDetailPage({ params }: PageProps) {
                 <div className="space-y-6">
                     {/* QR Code */}
                     {!isStaff && (
-                        <QueueQRCode queueId={queueId} queueName={state?.queue_name || "Queue"} />
+                        <QueueQRCode
+                            queueId={queueId}
+                            queueName={state?.queue_name || "Queue"}
+                            isCollapsible={true}
+                        />
                     )}
 
                     {/* Waiting List */}
