@@ -18,8 +18,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     // Close on mobile when navigating
     useEffect(() => {
-        if (onClose) onClose();
-    }, [pathname, onClose]);
+        if (onClose && isOpen) onClose();
+    }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const formatRole = (role?: string) => {
         if (!role) return "User";

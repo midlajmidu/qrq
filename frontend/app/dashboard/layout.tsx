@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useCallback } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
@@ -10,10 +10,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { logout } = useAuth();
 
+    const handleCloseSidebar = useCallback(() => {
+        setIsMobileMenuOpen(false);
+    }, []);
+
     return (
         <ProtectedRoute>
             <div className="min-h-screen bg-gray-50 flex">
-                <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+                <Sidebar isOpen={isMobileMenuOpen} onClose={handleCloseSidebar} />
 
                 <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
                     {/* Mobile Header */}
