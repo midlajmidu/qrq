@@ -15,8 +15,7 @@ export const config = {
 
   wsBaseUrl: isServer
     ? "ws://q4queue-backend:10000/api/v1/ws"
-    : (process.env.NEXT_PUBLIC_WS_BASE_URL ||
-      `${typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws'}://${typeof window !== 'undefined' ? window.location.host : 'localhost'}/api/v1/ws`),
+    : (process.env.NEXT_PUBLIC_WS_BASE_URL ?? "wss://q4queue-backend.onrender.com/api/v1/ws"),
 
   appName: process.env.NEXT_PUBLIC_APP_NAME || "Q4Queue",
   isProduction: process.env.NODE_ENV === "production",
