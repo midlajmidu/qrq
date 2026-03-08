@@ -107,20 +107,20 @@ export function checkAndNotifyMilestone(
     if (remaining <= 0 && !triggered.turn) {
         triggered.turn = true;
         sendQueueNotification({
-            title: "🎉 It's Your Turn!",
-            body: "Please proceed to the counter now.",
+            title: "🎉 Your Turn - Please Proceed!",
+            body: "Your token is being called. Please head to the counter now.",
         });
     } else if (remaining <= 2 && remaining > 0 && !triggered.two) {
         triggered.two = true;
         sendQueueNotification({
-            title: "Queue Update",
-            body: "You are second in line. Please get ready.",
+            title: "⚡ Get Ready - 2 People Ahead",
+            body: "You are almost next. Please stay alert and head toward the area.",
         });
     } else if (remaining <= 5 && remaining > 2 && !triggered.five) {
         triggered.five = true;
         sendQueueNotification({
-            title: "Queue Update",
-            body: "Only 5 people ahead. Please get ready.",
+            title: "🚶 Queue Update - 5 People Ahead",
+            body: "You are moving up the line! Please stay nearby for your turn.",
         });
     }
 }
