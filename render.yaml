@@ -3,7 +3,7 @@ services:
   - type: web
     name: q4queue-backend
     env: docker
-    dockerContext: .
+    dockerContext: backend
     dockerfilePath: backend/Dockerfile
     plan: free 
     region: oregon 
@@ -33,7 +33,7 @@ services:
   - type: web
     name: q4queue-frontend
     env: docker
-    dockerContext: .
+    dockerContext: frontend
     dockerfilePath: frontend/Dockerfile
     plan: free
     region: oregon
