@@ -20,7 +20,7 @@ settings = get_settings()
 config = context.config
 import os
 
-database_url = os.getenv("DATABASE_URL")
+database_url = settings.database_url_async
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
 
@@ -29,7 +29,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Use the asyncpg URL from settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", settings.database_url_async)
 
 target_metadata = Base.metadata
 
@@ -38,7 +38,7 @@ def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
 
     import os
-    url = os.getenv("DATABASE_URL")
+    url = settings.database_url_async
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -62,7 +62,7 @@ from sqlalchemy import pool
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode using async engine."""
 
-    database_url = os.getenv("DATABASE_URL")
+    database_url = settings.database_url_async
 
     connectable = create_async_engine(
         database_url,

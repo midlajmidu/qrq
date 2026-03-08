@@ -7,7 +7,6 @@ websockets==14.1
 # Database (async)
 sqlalchemy[asyncio]==2.0.36
 asyncpg==0.30.0
-psycopg2-binary==2.9.10
 alembic==1.14.0
 
 # Redis (async)
@@ -30,4 +29,3 @@ prometheus-fastapi-instrumentator==7.0.0
 # Utilities
 httpx==0.27.2
 email-validator==2.2.0
-asyncpg
