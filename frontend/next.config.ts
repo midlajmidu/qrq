@@ -9,6 +9,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/j/:queueId",
+        destination: "/join/:queueId",
+        permanent: true,
+      },
+      {
+        source: "/d/:queueId",
+        destination: "/display/:queueId",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

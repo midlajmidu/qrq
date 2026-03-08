@@ -56,6 +56,20 @@ class Settings(BaseSettings):
     )
 
     @property
+    def database_url_async(self) -> str:
+        """Ensures the DATABASE_URL uses the asyncpg driver."""
+        if not self.DATABASE_URL:
+            return ""
+        if self.DATABASE_URL.startswith("postgres://"):
+            return self.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+        if self.DATABASE_URL.startswith("postgresql://"):
+            return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if "postgresql+asyncpg://" not in self.DATABASE_URL:
+            # Fallback/Append approach if it's just a host
+            return self.DATABASE_URL
+        return self.DATABASE_URL
+
+    @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.lower() == "production"
 

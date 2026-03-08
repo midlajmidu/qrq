@@ -17,7 +17,7 @@ export default function QueueQRCode({ queueId, queueName, isCollapsible = false,
 
     useEffect(() => {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-        setJoinUrl(`${baseUrl}/join/${queueId}`);
+        setJoinUrl(`${baseUrl}/j/${queueId}`);
     }, [queueId]);
 
     const handleCopy = (e: React.MouseEvent) => {

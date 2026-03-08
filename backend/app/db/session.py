@@ -16,7 +16,7 @@ settings = get_settings()
 
 # ── Engine (created once at module import) ────────────────────────────────────
 engine: AsyncEngine = create_async_engine(
-    settings.DATABASE_URL,
+    settings.database_url_async,
     echo=not settings.is_production,       # SQL logging in dev only
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
@@ -41,7 +41,7 @@ async def connect_db() -> None:
         await conn.execute(
             __import__("sqlalchemy").text("SELECT 1")
         )
-    logger.info("PostgreSQL connection pool ready | url=%s", settings.DATABASE_URL.split("@")[-1])
+    logger.info("PostgreSQL connection pool ready | url=%s", settings.database_url_async.split("@")[-1])
 
 
 async def disconnect_db() -> None:

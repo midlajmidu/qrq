@@ -29,4 +29,3 @@ prometheus-fastapi-instrumentator==7.0.0
 # Utilities
 httpx==0.27.2
 email-validator==2.2.0
-asyncpg
