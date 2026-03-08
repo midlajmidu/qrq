@@ -9,6 +9,7 @@ import {
     notificationPermissionGranted,
     getNotificationsEnabled,
     setNotificationsEnabled,
+    sendQueueNotification,
     checkAndNotifyMilestone,
     freshMilestoneState,
     type MilestoneState,
@@ -428,15 +429,26 @@ export default function JoinQueuePage({ params }: PageProps) {
                                     {notifPermission === "denied" ? (
                                         <span className="text-xs font-bold text-red-500 bg-red-50 px-2.5 py-1 rounded-full border border-red-200">Blocked</span>
                                     ) : notifPermission === "granted" ? (
-                                        <button
-                                            onClick={handleToggleNotifications}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${notifEnabled ? "bg-indigo-600" : "bg-gray-300"}`}
-                                            role="switch"
-                                            aria-checked={notifEnabled}
-                                            aria-label="Toggle push notifications"
-                                        >
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${notifEnabled ? "translate-x-6" : "translate-x-1"}`} />
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => sendQueueNotification({
+                                                    title: "🔔 Connection Verified",
+                                                    body: "Your notifications and sound alerts are working perfectly!"
+                                                })}
+                                                className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider hover:underline"
+                                            >
+                                                [Test Alert]
+                                            </button>
+                                            <button
+                                                onClick={handleToggleNotifications}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${notifEnabled ? "bg-indigo-600" : "bg-gray-300"}`}
+                                                role="switch"
+                                                aria-checked={notifEnabled}
+                                                aria-label="Toggle push notifications"
+                                            >
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${notifEnabled ? "translate-x-6" : "translate-x-1"}`} />
+                                            </button>
+                                        </div>
                                     ) : (
                                         <button
                                             onClick={handleEnableNotifications}
