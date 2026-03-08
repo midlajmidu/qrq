@@ -66,11 +66,21 @@ export interface JoinRequest {
 }
 
 export interface JoinResponse {
+    id: string;          // Token's UUID
     token_number: number;
     position: number;
     current_serving: number;
     queue_prefix: string;
     session_id: string;  // session the token was created in
+}
+
+export interface TokenRestoreResponse {
+    id: string;
+    token_number: number;
+    status: TokenStatus;
+    queue_id: string;
+    session_id: string;
+    queue_prefix: string;
 }
 
 export interface PublicTokenResponse {
