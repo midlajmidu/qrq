@@ -5,11 +5,8 @@ import { api, ApiError } from "@/lib/api";
 import { useQueueSocket } from "@/hooks/useQueueSocket";
 import { playQueueSound } from "@/utils/playSound";
 import {
-    requestNotificationPermission,
-    notificationPermissionGranted,
-    getNotificationsEnabled,
-    setNotificationsEnabled,
-    sendQueueNotification,
+    getSoundsEnabled,
+    setSoundsEnabled,
     checkAndNotifyMilestone,
     freshMilestoneState,
     type MilestoneState,
@@ -52,10 +49,6 @@ export default function JoinQueuePage({ params }: PageProps) {
     const [soundEnabled, setSoundEnabled] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // ── Notification state ────────────────────────────────────────
-    const [notifEnabled, setNotifEnabled] = useState(false);
-    const [notifPermission, setNotifPermission] = useState<NotificationPermission>("default");
-
     // Tracks which milestone alerts have already fired to prevent repeats
     const triggeredRef = useRef<MilestoneState>(freshMilestoneState());
     // Whether user has interacted (unlocks autoplay)
@@ -71,22 +64,13 @@ export default function JoinQueuePage({ params }: PageProps) {
     // Init Audio + read stored preferences on mount
     useEffect(() => {
         if (typeof window !== "undefined") {
-            const enabled = sessionStorage.getItem("sound_enabled") === "true";
+            const enabled = getSoundsEnabled();
             setSoundEnabled(enabled);
 
             const audio = new Audio("/sounds/ringtone-you-would-be-glad-to-know.mp3");
             audio.preload = "auto";
             audio.volume = 1.0;
             audioRef.current = audio;
-
-            // Read stored notification preference
-            const notifOn = getNotificationsEnabled();
-            setNotifEnabled(notifOn);
-
-            // Read current permission state
-            if ("Notification" in window) {
-                setNotifPermission(Notification.permission);
-            }
         }
     }, []);
 
@@ -99,32 +83,17 @@ export default function JoinQueuePage({ params }: PageProps) {
                 }
             }).catch(() => { /* ignore */ });
         }
-        sessionStorage.setItem("sound_enabled", "true");
+        setSoundsEnabled(true);
         setSoundEnabled(true);
         interactedRef.current = true; // unlock autoplay milestone alerts
     }, []);
 
-    // ── Notification permission + toggle handler ──────────────────
-    const handleEnableNotifications = useCallback(async () => {
-        // If already denied, inform the user
-        if (notifPermission === "denied") return;
-
-        const granted = await requestNotificationPermission();
-        setNotifPermission(granted ? "granted" : "denied");
-
-        if (granted) {
-            setNotificationsEnabled(true);
-            setNotifEnabled(true);
-            interactedRef.current = true;
-        }
-    }, [notifPermission]);
-
-    const handleToggleNotifications = useCallback(() => {
-        const next = !notifEnabled;
-        setNotificationsEnabled(next);
-        setNotifEnabled(next);
+    const handleToggleSound = useCallback(() => {
+        const next = !soundEnabled;
+        setSoundsEnabled(next);
+        setSoundEnabled(next);
         if (next) interactedRef.current = true;
-    }, [notifEnabled]);
+    }, [soundEnabled]);
 
     // ── Restore from localStorage on mount ────────────────────────
     useEffect(() => {
@@ -317,7 +286,7 @@ export default function JoinQueuePage({ params }: PageProps) {
     const peopleAhead = myNumber !== null && actualStatus === "waiting" && myNumber > serving ? myNumber - serving - 1 : 0;
     const isNext = peopleAhead === 0 && actualStatus === "waiting" && myNumber !== null;
 
-    // ── Remaining-count milestone: sound + browser notification ────
+    // ── Remaining-count milestone: sound via utility ────
     useEffect(() => {
         if (!joinData?.token_number || !live?.current_serving || !joinData?.session_id) return;
         if (!interactedRef.current) return; // needs prior user interaction
@@ -325,20 +294,7 @@ export default function JoinQueuePage({ params }: PageProps) {
         // Session isolation check: Do not fire alerts for old sessions
         if (live?.session_id && live.session_id !== joinData.session_id) return;
 
-        const remaining = joinData.token_number - live.current_serving;
-
-        // Sound (fires if soundEnabled)
-        if (soundEnabled) {
-            if (remaining <= 0 && !triggeredRef.current.turn) {
-                playQueueSound();
-            } else if (remaining <= 2 && remaining > 0 && !triggeredRef.current.two) {
-                playQueueSound();
-            } else if (remaining <= 5 && remaining > 2 && !triggeredRef.current.five) {
-                playQueueSound();
-            }
-        }
-
-        // Browser notification + sound via utility (handles its own enabled check)
+        // Sound utility (handles its own enabled check)
         checkAndNotifyMilestone(joinData.token_number, live.current_serving, triggeredRef.current);
 
     }, [joinData?.token_number, joinData?.session_id, live?.current_serving, live?.session_id, soundEnabled]);
@@ -406,55 +362,21 @@ export default function JoinQueuePage({ params }: PageProps) {
                                         </div>
                                     </div>
                                     {soundEnabled ? (
-                                        <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-full">ON</span>
+                                        <button
+                                            onClick={handleToggleSound}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${soundEnabled ? "bg-indigo-600" : "bg-gray-300"}`}
+                                            role="switch"
+                                            aria-checked={soundEnabled}
+                                            aria-label="Toggle sound alerts"
+                                        >
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${soundEnabled ? "translate-x-6" : "translate-x-1"}`} />
+                                        </button>
                                     ) : (
                                         <button
                                             onClick={handleEnableSound}
                                             className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition"
                                         >
                                             Enable
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Browser notification toggle */}
-                                <div className="flex items-center justify-between border-t border-indigo-200 pt-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg">📱</span>
-                                        <div>
-                                            <p className="text-sm font-medium text-indigo-900">Push Notifications</p>
-                                            <p className="text-xs text-indigo-500">Browser alerts at 5, 2, and 0</p>
-                                        </div>
-                                    </div>
-                                    {notifPermission === "denied" ? (
-                                        <span className="text-xs font-bold text-red-500 bg-red-50 px-2.5 py-1 rounded-full border border-red-200">Blocked</span>
-                                    ) : notifPermission === "granted" ? (
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => sendQueueNotification({
-                                                    title: "🔔 Connection Verified",
-                                                    body: "Your notifications and sound alerts are working perfectly!"
-                                                })}
-                                                className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider hover:underline"
-                                            >
-                                                [Test Alert]
-                                            </button>
-                                            <button
-                                                onClick={handleToggleNotifications}
-                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${notifEnabled ? "bg-indigo-600" : "bg-gray-300"}`}
-                                                role="switch"
-                                                aria-checked={notifEnabled}
-                                                aria-label="Toggle push notifications"
-                                            >
-                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${notifEnabled ? "translate-x-6" : "translate-x-1"}`} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={handleEnableNotifications}
-                                            className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition"
-                                        >
-                                            Allow
                                         </button>
                                     )}
                                 </div>
