@@ -7,7 +7,6 @@ services:
     dockerfilePath: Dockerfile
     plan: free 
     region: oregon 
-    preDeployCommand: "alembic upgrade head"
     healthCheckPath: /api/v1/health
     envVars:
       - key: ENVIRONMENT
