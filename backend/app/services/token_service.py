@@ -159,6 +159,7 @@ async def join_queue(
     current_serving = await _current_serving_number(db, queue_id=queue_id)
 
     return JoinResponse(
+        id=token.id,
         token_number=new_number,
         position=position,
         current_serving=current_serving,

@@ -51,6 +51,7 @@ class JoinRequest(BaseModel):
 
 class JoinResponse(BaseModel):
     """Returned when a customer joins a queue."""
+    id: uuid.UUID           # The unique database ID of the token
     token_number: int
     position: int           # how many 'waiting' tokens are ahead
     current_serving: int    # the token_number currently being served (0 = none)
@@ -66,6 +67,18 @@ class PublicTokenResponse(BaseModel):
     customer_age: Optional[int]
     customer_phone: str
     session_id: uuid.UUID
+
+    model_config = {"from_attributes": True}
+    
+
+class TokenRestoreResponse(BaseModel):
+    """Basic details used to restore a session in the public join page."""
+    id: uuid.UUID
+    token_number: int
+    status: TokenStatus
+    queue_id: uuid.UUID
+    session_id: uuid.UUID
+    queue_prefix: str
 
     model_config = {"from_attributes": True}
 
