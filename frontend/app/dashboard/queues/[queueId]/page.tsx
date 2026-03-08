@@ -353,7 +353,7 @@ export default function QueueDetailPage({ params }: PageProps) {
                 <div className="flex items-center gap-3 flex-wrap">
                     <ConnectionBadge status={status} />
                     <Link
-                        href={`/display/${queueId}`}
+                        href={`/d/${queueId}`}
                         target="_blank"
                         rel="noopener"
                         className="text-xs font-medium text-gray-500 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -363,7 +363,7 @@ export default function QueueDetailPage({ params }: PageProps) {
                     </Link>
                     {!isStaff && (
                         <Link
-                            href={`/join/${queueId}`}
+                            href={`/j/${queueId}`}
                             target="_blank"
                             rel="noopener"
                             className="text-xs font-medium text-gray-500 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
