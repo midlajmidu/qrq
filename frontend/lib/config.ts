@@ -11,7 +11,7 @@ export const config = {
   // In the browser, we use a relative path so it goes through our Nginx proxy or is overridden by env.
   apiBaseUrl: isServer
     ? (process.env.INTERNAL_API_URL || "http://q4queue-backend:10000/api/v1")
-    : (process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1"),
+    : (process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://q4queue-backend.onrender.com/api/v1"),
 
   wsBaseUrl: isServer
     ? "ws://q4queue-backend:10000/api/v1/ws"
