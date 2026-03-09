@@ -94,6 +94,7 @@ async def websocket_queue(
         channel = manager.get_channel(org_id_str, str(queue_id))
 
         # ── 2. Admin auth (optional) ─────────────────────────────
+        is_admin = False
         if token:
             try:
                 payload = decode_access_token(token)
@@ -101,6 +102,7 @@ async def websocket_queue(
                 if jwt_org_id != org_id_str:
                     await websocket.close(code=4403, reason="Queue does not belong to your organization")
                     return
+                is_admin = True
                 logger.info(
                     "WS admin connected | user=%s channel=%s",
                     payload.get("sub"),
@@ -123,7 +125,7 @@ async def websocket_queue(
 
         # ── 4. Send full state snapshot immediately ───────────────
         async with AsyncSessionLocal() as db:
-            snapshot = await build_queue_snapshot(db, queue_id=queue_id)
+            snapshot = await build_queue_snapshot(db, queue_id=queue_id, is_admin=is_admin)
         await websocket.send_json(snapshot)
 
         # ── 5. Keep alive loop ────────────────────────────────────

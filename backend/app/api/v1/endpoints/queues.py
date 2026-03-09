@@ -17,7 +17,7 @@ from typing import Union
 from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, get_current_admin_or_staff
 from app.db.deps import get_db
 from app.models.user import User
 from app.schemas.queue import (
@@ -27,6 +27,7 @@ from app.schemas.queue import (
     NoTokenResponse,
     QueueCreate,
     QueueResponse,
+    TokenResponse,
     PublicTokenResponse,
     AnnouncementUpdate,
 )
@@ -110,6 +111,25 @@ async def get_queue(
     except ValueError as exc:
         _raise_404(exc)
     return QueueResponse.model_validate(queue)
+
+
+@router.get(
+    "/{queue_id}/tokens",
+    response_model=list[TokenResponse],
+    summary="List tokens in a specific queue (Admin History)",
+)
+async def list_tokens(
+    queue_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_or_staff),
+):
+    """Retrieve all tokens in a queue (history/details view)."""
+    # Verify queue exists and belongs to current_user
+    await queue_service.get_queue_or_404(db, queue_id=queue_id, org_id=current_user.org_id)
+    tokens = await token_service.list_queue_tokens(
+        db, queue_id=queue_id, org_id=current_user.org_id
+    )
+    return [TokenResponse.model_validate(t) for t in tokens]
 
 
 @router.patch(

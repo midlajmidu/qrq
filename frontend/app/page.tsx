@@ -7,7 +7,7 @@ export default function Home() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen px-4 text-center bg-gradient-to-b from-white to-gray-50">
+    <main className="flex flex-col items-center justify-center px-4 text-center bg-gradient-to-b from-white to-gray-50 py-20">
       <div className="max-w-2xl mx-auto">
         <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg shadow-blue-200">
           <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

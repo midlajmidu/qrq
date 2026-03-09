@@ -79,7 +79,6 @@ class OrgDetail(BaseModel):
     is_active: bool
     created_at: str
     admin_email: str | None = None
-    admin_initial_password: str | None = None
     admin_password_changed_at: str | None = None
 
     model_config = {"from_attributes": True}
@@ -123,7 +122,6 @@ def _org_to_detail(o: Organization, admin_user: User | None = None) -> OrgDetail
         is_active=o.is_active,
         created_at=o.created_at.isoformat(),
         admin_email=admin_user.email if admin_user else None,
-        admin_initial_password=admin_user.initial_password if admin_user else None,
         admin_password_changed_at=admin_user.password_changed_at.isoformat() if admin_user and admin_user.password_changed_at else None,
     )
 
@@ -259,7 +257,6 @@ async def create_organization(
         org_id=org.id,
         email=body.admin_email,
         password_hash=hash_password(body.admin_password),
-        initial_password=body.admin_password,
         role="admin",
     )
     db.add(admin)
@@ -433,7 +430,6 @@ async def reset_org_admin_password(
 
     # Update password
     admin.password_hash = hash_password(body.new_password)
-    admin.initial_password = body.new_password
     admin.password_changed_at = None  # Reset change status since super-admin set a new "initial"
     
     await db.commit()

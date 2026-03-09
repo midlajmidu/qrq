@@ -75,7 +75,7 @@ export default function DisplayQueuePage({ params }: PageProps) {
     const servingKey = `serving-${serving}`;
 
     return (
-        <main className="h-screen bg-gray-950 flex flex-col text-white overflow-hidden select-none" aria-label="Queue display">
+        <main className="min-h-screen bg-gray-950 flex flex-col text-white select-none" aria-label="Queue display">
             {/* Connection & Auth Controls */}
             <div className="absolute top-4 right-4 z-10 flex items-center gap-3" aria-live="polite">
                 {!soundEnabled && (

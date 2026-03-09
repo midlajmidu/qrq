@@ -101,10 +101,12 @@ class TokenResponse(BaseModel):
     id: uuid.UUID
     org_id: uuid.UUID
     queue_id: uuid.UUID
+    session_id: uuid.UUID
     token_number: int
     status: TokenStatus
     created_at: datetime
     served_at: Optional[datetime]
+    completed_at: Optional[datetime]
     customer_name: str
     customer_age: Optional[int]
     customer_phone: str
