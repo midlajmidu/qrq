@@ -2,7 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || "http://backend:8000";
+    // Priority: 1. BACKEND_URL, 2. Derived from Public API URL, 3. Local Docker fallback
+    const backendUrl = process.env.BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL?.replace("/api/v1", "") ||
+      "http://backend:8000";
+
     return [
       {
         source: "/api/v1/:path*",
