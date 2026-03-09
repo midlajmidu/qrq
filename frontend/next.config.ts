@@ -2,10 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    // Priority: 1. BACKEND_URL, 2. Derived from Public API URL, 3. Local Docker fallback
+    // Priority: 1. BACKEND_URL, 2. NEXT_PUBLIC_API_URL, 3. NEXT_PUBLIC_API_BASE_URL, 4. Production Fallback
     const backendUrl = process.env.BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") ||
       process.env.NEXT_PUBLIC_API_BASE_URL?.replace("/api/v1", "") ||
-      "http://backend:8000";
+      "https://q4queue-backend.onrender.com";
 
     return [
       {
