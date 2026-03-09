@@ -21,6 +21,7 @@ async def build_queue_snapshot(
     db: AsyncSession,
     *,
     queue_id: uuid.UUID,
+    is_admin: bool = False,
 ) -> dict:
     """
     Build a complete queue state snapshot for WebSocket clients.
@@ -51,12 +52,17 @@ async def build_queue_snapshot(
     )
     serving_token = serving_result.scalar_one_or_none()
     current_serving = serving_token.token_number if serving_token else 0
-    serving_details = {
-        "token_number": serving_token.token_number,
-        "customer_name": serving_token.customer_name,
-        "customer_age": serving_token.customer_age,
-        "customer_phone": serving_token.customer_phone,
-    } if serving_token else None
+    
+    serving_details = None
+    if serving_token:
+        serving_details = {
+            "token_number": serving_token.token_number,
+            "customer_name": serving_token.customer_name,
+        }
+        if is_admin:
+            # Mask sensitive data for public screens
+            serving_details["customer_age"] = serving_token.customer_age
+            serving_details["customer_phone"] = serving_token.customer_phone
 
     # ── Waiting count ──────────────────────────────────────────────
     waiting_result = await db.execute(
@@ -79,17 +85,19 @@ async def build_queue_snapshot(
         .order_by(Token.token_number.desc())
         .limit(5)
     )
-    recent_tokens = [
-        {
+    
+    recent_tokens = []
+    for t in recent_result.scalars().all():
+        token_data = {
             "token_number": t.token_number,
             "status": t.status.value,
             "served_at": t.served_at.isoformat() if t.served_at else None,
             "customer_name": t.customer_name,
-            "customer_age": t.customer_age,
-            "customer_phone": t.customer_phone,
         }
-        for t in recent_result.scalars().all()
-    ]
+        if is_admin:
+            token_data["customer_age"] = t.customer_age
+            token_data["customer_phone"] = t.customer_phone
+        recent_tokens.append(token_data)
 
     # ── Waiting tokens (all of them, or limit 50 for large queues) ──
     waiting_tokens_result = await db.execute(
@@ -101,22 +109,24 @@ async def build_queue_snapshot(
         .order_by(Token.token_number.asc())
         .limit(50)
     )
-    waiting_tokens = [
-        {
+    
+    waiting_tokens = []
+    for t in waiting_tokens_result.scalars().all():
+        token_data = {
             "id": str(t.id),
             "token_number": t.token_number,
             "status": t.status.value,
             "customer_name": t.customer_name,
-            "customer_age": t.customer_age,
-            "customer_phone": t.customer_phone,
         }
-        for t in waiting_tokens_result.scalars().all()
-    ]
+        if is_admin:
+            token_data["customer_age"] = t.customer_age
+            token_data["customer_phone"] = t.customer_phone
+        waiting_tokens.append(token_data)
 
     return {
         "type": "queue_snapshot",
         "queue_id": str(queue_id),
-        "session_id": str(queue.session_id),   # ← session isolation key
+        "session_id": str(queue.token_session_id),   # ← token session isolation key
         "queue_name": queue.name,
         "prefix": queue.prefix,
         "announcement": queue.announcement,

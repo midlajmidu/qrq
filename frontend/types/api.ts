@@ -11,6 +11,32 @@ export interface LoginRequest {
     organization_slug: string;
 }
 
+// ── Analytics ────────────────────────────────────────────────────
+export interface AnalyticsOverview {
+    status_counts: {
+        total: number;
+        served: number;
+        cancelled: number;
+        waiting: number;
+    };
+    timings: {
+        avg_waiting_time: string;
+        max_waiting_time: string;
+        avg_served_time: string;
+        max_served_time: string;
+    };
+    charts: {
+        hourly: { hour: string; visits: number }[];
+        monthly: { month: string; visits: number }[];
+    };
+    recent_activity: {
+        number: number;
+        status: string;
+        queue: string;
+        time: string;
+    }[];
+}
+
 export interface TokenResponse {
     access_token: string;
     token_type: string;
@@ -26,9 +52,27 @@ export interface JwtPayload {
 }
 
 // ── Queue ────────────────────────────────────────────────────────
+// ── Session ──────────────────────────────────────────────────────
+export interface SessionResponse {
+    id: string;
+    org_id: string;
+    session_date: string;
+    title: string;
+    created_at: string;
+    queue_count: number;
+}
+
+export interface SessionCreate {
+    session_date: string;
+    title?: string;
+}
+
+// ── Queue ────────────────────────────────────────────────────────
 export interface QueueResponse {
     id: string;
     org_id: string;
+    session_id: string;
+    token_session_id: string;
     name: string;
     prefix: string;
     announcement: string | null;
@@ -49,10 +93,12 @@ export interface TokenDetail {
     id: string;
     org_id: string;
     queue_id: string;
+    session_id: string;
     token_number: number;
     status: TokenStatus;
     created_at: string;
     served_at: string | null;
+    completed_at: string | null;
     customer_name: string;
     customer_age: number | null;
     customer_phone: string;

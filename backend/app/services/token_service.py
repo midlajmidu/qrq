@@ -144,7 +144,7 @@ async def join_queue(
     token = Token(
         org_id=queue.org_id,
         queue_id=queue.id,
-        session_id=queue.session_id,  # ← inherit current session
+        session_id=queue.token_session_id,  # ← inherit current token session
         token_number=new_number,
         status=TokenStatus.waiting,
         customer_name=data.name.strip(),
@@ -164,7 +164,7 @@ async def join_queue(
         position=position,
         current_serving=current_serving,
         queue_prefix=queue.prefix,
-        session_id=queue.session_id,
+        session_id=queue.token_session_id,
     )
 
 
@@ -204,7 +204,7 @@ async def call_next(
             Token.queue_id == queue_id,
             Token.status == TokenStatus.serving,
         )
-        .values(status=target_status)
+        .values(status=target_status, completed_at=now)
     )
 
     # Find next waiting token
@@ -256,6 +256,7 @@ async def skip_token(db: AsyncSession, *, token_id: uuid.UUID, org_id: uuid.UUID
         raise ValueError(f"Cannot skip token with status '{token.status}'")
 
     token.status = TokenStatus.skipped
+    token.completed_at = datetime.now(timezone.utc)
     await db.flush()
     return token
 
@@ -267,6 +268,7 @@ async def complete_token(db: AsyncSession, *, token_id: uuid.UUID, org_id: uuid.
 
     token.status = TokenStatus.done
     token.served_at = token.served_at or datetime.now(timezone.utc)
+    token.completed_at = datetime.now(timezone.utc)
     await db.flush()
     return token
 
@@ -277,6 +279,7 @@ async def remove_token(db: AsyncSession, *, token_id: uuid.UUID, org_id: uuid.UU
     
     if token.status == TokenStatus.waiting:
         token.status = TokenStatus.deleted
+        token.completed_at = datetime.now(timezone.utc)
         await db.flush()
     elif token.status == TokenStatus.serving:
         await call_next(db, queue_id=queue.id, org_id=org_id, action="deleted")
@@ -318,7 +321,7 @@ async def serve_specific_token(db: AsyncSession, *, queue_id: uuid.UUID, org_id:
             Token.queue_id == queue_id,
             Token.status == TokenStatus.serving,
         )
-        .values(status=TokenStatus.skipped)
+        .values(status=TokenStatus.skipped, completed_at=now)
     )
 
     specific_token.status = TokenStatus.serving
@@ -331,3 +334,11 @@ async def serve_specific_token(db: AsyncSession, *, queue_id: uuid.UUID, org_id:
         serving=specific_token.token_number,
         remaining=remaining,
     )
+async def list_queue_tokens(db: AsyncSession, *, queue_id: uuid.UUID, org_id: uuid.UUID) -> list[Token]:
+    """Retrieve all tokens in a queue (history/details view)."""
+    result = await db.execute(
+        select(Token)
+        .where(Token.queue_id == queue_id, Token.org_id == org_id)
+        .order_by(Token.token_number.asc())
+    )
+    return list(result.scalars().all())
