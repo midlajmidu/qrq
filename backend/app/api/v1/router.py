@@ -22,6 +22,14 @@ api_router.include_router(staff.router, prefix="/staff", tags=["Staff"])
 # ── Queues ─────────────────────────────────────────────────────────
 api_router.include_router(queues.router, prefix="/queues", tags=["Queues"])
 
+# ── Analytics ──────────────────────────────────────────────────────
+from app.api.v1.endpoints import analytics
+api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
+
+# ── Sessions ───────────────────────────────────────────────────────
+from app.api.v1.endpoints import sessions
+api_router.include_router(sessions.router, prefix="/sessions", tags=["Sessions"])
+
 # ── Tokens ─────────────────────────────────────────────────────────
 api_router.include_router(tokens.router, prefix="/tokens", tags=["Tokens"])
 

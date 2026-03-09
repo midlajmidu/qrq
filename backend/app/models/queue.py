@@ -6,7 +6,7 @@ Design decisions:
   - current_token_number is locked with SELECT FOR UPDATE during join/next
     to guarantee atomic increment with zero duplicates under concurrency.
   - prefix (e.g. "A", "B") lets orgs run labelled queues side-by-side.
-  - Unique(name, org_id) — same name is allowed in different orgs.
+  - Unique(name, org_id, session_id) — same name is allowed in different orgs/sessions.
 """
 import uuid
 from datetime import datetime
@@ -30,7 +30,7 @@ class Queue(Base):
     __tablename__ = "queues"
 
     __table_args__ = (
-        UniqueConstraint("name", "org_id", name="uq_queue_name_org"),
+        UniqueConstraint("name", "org_id", "session_id", name="uq_queue_name_org_session"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -43,6 +43,12 @@ class Queue(Base):
         index=True,
     )
     session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    token_session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), nullable=False, default=uuid.uuid4, index=True
     )
     name: Mapped[str] = mapped_column(String(150), nullable=False)
@@ -57,6 +63,7 @@ class Queue(Base):
     )
 
     # ── Relationships ──────────────────────────────────────────────
+    session: Mapped["Session"] = relationship("Session", back_populates="queues")
     tokens: Mapped[list["Token"]] = relationship(  # noqa: F821
         "Token", back_populates="queue", lazy="noload"
     )

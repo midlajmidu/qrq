@@ -81,6 +81,9 @@ class Token(Base):
     served_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    completed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # ── Customer Info ──────────────────────────────────────────────
     customer_name: Mapped[str] = mapped_column(String(120), nullable=False)

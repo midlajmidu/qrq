@@ -47,6 +47,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     
+    # DEPRECATED: Stored plain-text passwords (security risk). No longer populated.
     initial_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

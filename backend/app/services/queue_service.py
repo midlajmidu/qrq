@@ -27,17 +27,19 @@ async def create_queue(
     *,
     org_id: uuid.UUID,
     data: QueueCreate,
+    session_id: uuid.UUID | None = None,
 ) -> Queue:
-    """Create a new queue under the given org."""
+    """Create a new queue under the given org, optionally inside a session."""
     queue = Queue(
         org_id=org_id,
         name=data.name,
         prefix=data.prefix,
+        session_id=session_id,
     )
     db.add(queue)
     await db.commit()
     await db.refresh(queue)
-    logger.info("Queue created | id=%s org=%s name=%r", queue.id, org_id, queue.name)
+    logger.info("Queue created | id=%s org=%s name=%r session=%s", queue.id, org_id, queue.name, session_id)
     return queue
 
 
@@ -45,13 +47,13 @@ async def list_queues(
     db: AsyncSession,
     *,
     org_id: uuid.UUID,
+    session_id: uuid.UUID | None = None,
 ) -> list[Queue]:
-    """List all queues belonging to an org (tenant filtered)."""
-    result = await db.execute(
-        select(Queue)
-        .where(Queue.org_id == org_id)
-        .order_by(Queue.created_at.asc())
-    )
+    """List all queues belonging to an org, optionally filtered by session."""
+    query = select(Queue).where(Queue.org_id == org_id)
+    if session_id is not None:
+        query = query.where(Queue.session_id == session_id)
+    result = await db.execute(query.order_by(Queue.created_at.asc()))
     return list(result.scalars().all())
 
 
@@ -144,12 +146,12 @@ async def reset_queue(
     await db.execute(delete(Token).where(Token.queue_id == queue_id))
 
     # Rotate the session and reset counters
-    queue.session_id = uuid.uuid4()
+    queue.token_session_id = uuid.uuid4()
     queue.current_token_number = 0
     await db.commit()
     logger.info(
-        "Queue reset | id=%s org=%s new_session=%s",
-        queue_id, org_id, queue.session_id,
+        "Queue reset | id=%s org=%s new_token_session=%s",
+        queue_id, org_id, queue.token_session_id,
     )
     return queue
 

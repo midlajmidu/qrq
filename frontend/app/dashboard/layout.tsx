@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
     return (
         <ProtectedRoute>
-            <div className="min-h-screen bg-gray-50 flex">
+            <div className="bg-gray-50 flex">
                 <Sidebar isOpen={isMobileMenuOpen} onClose={handleCloseSidebar} />
 
                 <div className="flex-1 flex flex-col min-w-0 lg:pl-64">

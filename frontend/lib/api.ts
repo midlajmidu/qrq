@@ -17,6 +17,7 @@ import { logger } from "@/lib/logger";
 import type {
     ApiErrorResponse,
     HealthResponse,
+    AnalyticsOverview,
     JoinRequest,
     JoinResponse,
     ListOrgsParams,
@@ -33,6 +34,8 @@ import type {
     PaginatedStaffResponse,
     QueueCreate,
     QueueResponse,
+    SessionCreate,
+    SessionResponse,
     StaffCreate,
     StaffListParams,
     StaffMember,
@@ -178,6 +181,51 @@ export const api = {
         });
     },
 
+    // ── Analytics ────────────────────────────────────────────────
+    getOverview(sessionId?: string, queueId?: string): Promise<AnalyticsOverview> {
+        const params = new URLSearchParams();
+        if (sessionId) params.append("session_id", sessionId);
+        if (queueId) params.append("queue_id", queueId);
+
+        const qs = params.toString();
+        const url = qs ? `/analytics/overview?${qs}` : "/analytics/overview";
+        return request<AnalyticsOverview>(url);
+    },
+
+    // ── Sessions ─────────────────────────────────────────────────
+    listSessions(): Promise<SessionResponse[]> {
+        return request<SessionResponse[]>("/sessions");
+    },
+
+    getSession(sessionId: string): Promise<SessionResponse> {
+        return request<SessionResponse>(`/sessions/${sessionId}`);
+    },
+
+    createSession(data: SessionCreate): Promise<SessionResponse> {
+        return request<SessionResponse>("/sessions", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
+    deleteSession(sessionId: string): Promise<void> {
+        return request<void>(`/sessions/${sessionId}`, {
+            method: "DELETE",
+        });
+    },
+
+    // ── Queues (session-scoped) ──────────────────────────────────
+    listSessionQueues(sessionId: string): Promise<QueueResponse[]> {
+        return request<QueueResponse[]>(`/sessions/${sessionId}/queues`);
+    },
+
+    createSessionQueue(sessionId: string, data: QueueCreate): Promise<QueueResponse> {
+        return request<QueueResponse>(`/sessions/${sessionId}/queues`, {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+
     // ── Queues ───────────────────────────────────────────────────
     listQueues(): Promise<QueueResponse[]> {
         return request<QueueResponse[]>("/queues");
@@ -217,6 +265,10 @@ export const api = {
         return request<void>(`/queues/${queueId}/reset`, {
             method: "POST",
         });
+    },
+
+    listQueueTokens(queueId: string): Promise<TokenDetail[]> {
+        return request<TokenDetail[]>(`/queues/${queueId}/tokens`);
     },
 
     // ── Token operations ─────────────────────────────────────────
