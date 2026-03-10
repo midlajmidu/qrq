@@ -5,21 +5,29 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
+    const pathname = usePathname();
+    const dashBase = user?.org_slug ? `/${user.org_slug}/dashboard` : "/dashboard";
 
     const handleCloseSidebar = useCallback(() => {
         setIsMobileMenuOpen(false);
     }, []);
 
+    // Hide sidebar on "Manage Queue" pages (e.g., /dashboard/queues/[uuid])
+    const isManageQueuePage = pathname?.match(/\/dashboard\/queues\/[0-9a-f-]{36}/i);
+
     return (
         <ProtectedRoute>
             <div className="bg-gray-50 flex">
-                <Sidebar isOpen={isMobileMenuOpen} onClose={handleCloseSidebar} />
+                {!isManageQueuePage && (
+                    <Sidebar isOpen={isMobileMenuOpen} onClose={handleCloseSidebar} />
+                )}
 
-                <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+                <div className={`flex-1 flex flex-col min-w-0 ${!isManageQueuePage ? "lg:pl-64" : ""}`}>
                     {/* Mobile Header */}
                     <header className="lg:hidden bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 sticky top-0 z-20">
                         <div className="flex items-center gap-3">
@@ -32,7 +40,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
-                            <Link href="/dashboard" className="flex items-center gap-2">
+                            <Link href={dashBase} className="flex items-center gap-2">
                                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />

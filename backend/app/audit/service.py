@@ -17,10 +17,8 @@ Event types:
 """
 import logging
 import uuid
-from datetime import datetime, timezone
 from typing import Any, Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.models import AuditLog
 from app.db.session import AsyncSessionLocal

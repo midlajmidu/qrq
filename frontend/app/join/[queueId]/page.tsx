@@ -3,7 +3,6 @@
 import React, { use, useState, useEffect, useCallback, useRef } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useQueueSocket } from "@/hooks/useQueueSocket";
-import { playQueueSound } from "@/utils/playSound";
 import {
     getSoundsEnabled,
     setSoundsEnabled,
@@ -58,8 +57,8 @@ export default function JoinQueuePage({ params }: PageProps) {
     const [customerName, setCustomerName] = useState("");
     const [customerAge, setCustomerAge] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
-
-    const isFormValid = customerName.trim().length > 0 && customerPhone.trim().length > 0;
+    const isPhoneValid = /^\d{10}$/.test(customerPhone);
+    const isFormValid = customerName.trim().length > 0 && isPhoneValid;
 
     // Init Audio + read stored preferences on mount
     useEffect(() => {
@@ -218,7 +217,7 @@ export default function JoinQueuePage({ params }: PageProps) {
 
         fetchStatus();
         return () => { mounted = false; };
-    }, [queueId, joinData?.token_number, live]);
+    }, [queueId, joinData?.token_number, joinData?.session_id, live, soundEnabled]);
 
     const handleJoin = useCallback(async () => {
         if (!isFormValid) return;
@@ -516,8 +515,11 @@ export default function JoinQueuePage({ params }: PageProps) {
                                         id="customer-phone"
                                         type="tel"
                                         value={customerPhone}
-                                        onChange={(e) => setCustomerPhone(e.target.value)}
-                                        placeholder="+91 99999 99999"
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                                            setCustomerPhone(val);
+                                        }}
+                                        placeholder="Enter 10 digit number"
                                         required
                                         autoComplete="tel"
                                         disabled={isJoining || queueClosed}

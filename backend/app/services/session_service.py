@@ -1,79 +1,113 @@
 """
 app/services/session_service.py
-Session management business logic.
+Session (date-based) management business logic.
+
+All methods receive org_id from the authenticated JWT — never from request body.
 """
 import logging
 import uuid
 from datetime import date
+from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.session import Session
 from app.models.queue import Queue
-from app.schemas.session import SessionCreate
+from app.schemas.session import SessionCreate, SessionResponse
+from app.schemas.queue import QueueCreate
 
 logger = logging.getLogger(__name__)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Session CRUD
+# ─────────────────────────────────────────────────────────────────────────────
 
 async def create_session(
     db: AsyncSession,
     *,
     org_id: uuid.UUID,
     data: SessionCreate,
-) -> Session:
-    """Create a new session for the given org and date."""
+) -> SessionResponse:
+    """Create a new session (one per date per org)."""
     session = Session(
         org_id=org_id,
         session_date=data.session_date,
-        title=data.title or "",
+        title=data.title,
     )
     db.add(session)
-    await db.commit()
-    await db.refresh(session)
-    logger.info("Session created | id=%s org=%s date=%s", session.id, org_id, data.session_date)
-    return session
+    try:
+        await db.commit()
+        await db.refresh(session)
+    except Exception as exc:
+        await db.rollback()
+        raise ValueError(f"A session already exists for {data.session_date}") from exc
+
+    logger.info("Session created | id=%s org=%s date=%s", session.id, org_id, session.session_date)
+    return SessionResponse(
+        id=session.id,
+        org_id=session.org_id,
+        session_date=session.session_date,
+        title=session.title,
+        created_at=session.created_at,
+        queue_count=0,
+    )
 
 
 async def list_sessions(
     db: AsyncSession,
     *,
     org_id: uuid.UUID,
-) -> list[dict]:
-    """List all sessions for an org, including queue counts."""
-    # Subquery to count queues per session
+    limit: int = 20,
+    offset: int = 0,
+    session_date: Optional[date] = None,
+) -> dict:
+    """List all sessions for an org, newest first, with queue counts."""
+    # Subquery: count queues per session
     queue_count_sq = (
-        select(
-            Queue.session_id,
-            func.count(Queue.id).label("queue_count"),
-        )
+        select(Queue.session_id, func.count(Queue.id).label("queue_count"))
         .where(Queue.org_id == org_id)
         .group_by(Queue.session_id)
         .subquery()
     )
 
-    result = await db.execute(
-        select(
-            Session,
-            func.coalesce(queue_count_sq.c.queue_count, 0).label("queue_count"),
-        )
-        .outerjoin(queue_count_sq, Session.id == queue_count_sq.c.session_id)
-        .where(Session.org_id == org_id)
-        .order_by(Session.session_date.desc())
-    )
+    # Get total count
+    count_query = select(func.count(Session.id)).where(Session.org_id == org_id)
+    if session_date:
+        count_query = count_query.where(Session.session_date == session_date)
+    total_res = await db.execute(count_query)
+    total = total_res.scalar_one()
 
+    # Apply pagination and filter
+    base_query = select(Session, func.coalesce(queue_count_sq.c.queue_count, 0).label("queue_count"))
+    base_query = base_query.outerjoin(queue_count_sq, queue_count_sq.c.session_id == Session.id)
+    base_query = base_query.where(Session.org_id == org_id)
+    if session_date:
+        base_query = base_query.where(Session.session_date == session_date)
+    base_query = base_query.order_by(Session.session_date.desc())
+    base_query = base_query.limit(limit).offset(offset)
+
+    result = await db.execute(base_query)
     rows = result.all()
-    return [
-        {
-            "id": row.Session.id,
-            "org_id": row.Session.org_id,
-            "session_date": row.Session.session_date,
-            "title": row.Session.title,
-            "created_at": row.Session.created_at,
-            "queue_count": row.queue_count,
-        }
+    
+    items = [
+        SessionResponse(
+            id=row.Session.id,
+            org_id=row.Session.org_id,
+            session_date=row.Session.session_date,
+            title=row.Session.title,
+            created_at=row.Session.created_at,
+            queue_count=row.queue_count,
+        )
         for row in rows
     ]
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 async def get_session_or_404(
@@ -82,11 +116,11 @@ async def get_session_or_404(
     session_id: uuid.UUID,
     org_id: uuid.UUID,
 ) -> Session:
-    """Fetch a session by ID, scoped to org_id."""
+    """Fetch a session scoped to org. Raises ValueError → 404."""
     result = await db.execute(
         select(Session).where(
             Session.id == session_id,
-            Session.org_id == org_id,
+            Session.org_id == org_id,  # TENANT ISOLATION
         )
     )
     session = result.scalar_one_or_none()
@@ -101,8 +135,80 @@ async def delete_session(
     session_id: uuid.UUID,
     org_id: uuid.UUID,
 ) -> None:
-    """Delete a session and all its queues (cascade)."""
+    """Delete a session (cascades to queues and tokens)."""
     session = await get_session_or_404(db, session_id=session_id, org_id=org_id)
     await db.delete(session)
     await db.commit()
     logger.info("Session deleted | id=%s org=%s", session_id, org_id)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Session-scoped Queue CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def list_session_queues(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    org_id: uuid.UUID,
+    limit: int = 20,
+    offset: int = 0,
+    name: Optional[str] = None,
+) -> dict:
+    """List all queues within a specific session (tenant-scoped)."""
+    # Total count
+    count_query = select(func.count(Queue.id)).where(
+        Queue.session_id == session_id, Queue.org_id == org_id
+    )
+    if name:
+        count_query = count_query.where(Queue.name.ilike(f"%{name}%"))
+    total_res = await db.execute(count_query)
+    total = total_res.scalar_one()
+
+    # Paginated items
+    select_query = select(Queue).where(Queue.session_id == session_id, Queue.org_id == org_id)
+    if name:
+        select_query = select_query.where(Queue.name.ilike(f"%{name}%"))
+    
+    result = await db.execute(
+        select_query.order_by(Queue.created_at.asc()).limit(limit).offset(offset)
+    )
+    items = list(result.scalars().all())
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+async def create_session_queue(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    org_id: uuid.UUID,
+    data: QueueCreate,
+) -> Queue:
+    """Create a queue scoped to a specific session."""
+    # Verify session exists and belongs to org
+    await get_session_or_404(db, session_id=session_id, org_id=org_id)
+
+    queue = Queue(
+        org_id=org_id,
+        session_id=session_id,
+        name=data.name,
+        prefix=data.prefix,
+    )
+    db.add(queue)
+    try:
+        await db.commit()
+        await db.refresh(queue)
+    except Exception as exc:
+        await db.rollback()
+        raise ValueError(f"A queue named '{data.name}' already exists in this session") from exc
+
+    logger.info(
+        "Queue created in session | id=%s session=%s org=%s name=%r",
+        queue.id, session_id, org_id, queue.name,
+    )
+    return queue

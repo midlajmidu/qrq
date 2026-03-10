@@ -42,6 +42,8 @@ def create_access_token(
     org_id: str | None,
     role: str,
     email: str,
+    org_slug: str | None = None,
+    org_name: str | None = None,
     expires_delta: timedelta | None = None,
 ) -> str:
     """
@@ -62,6 +64,8 @@ def create_access_token(
     payload: dict[str, Any] = {
         "sub": user_id,
         "org_id": org_id,
+        "org_slug": org_slug,
+        "org_name": org_name,
         "role": role,
         "email": email,
         "exp": expire,

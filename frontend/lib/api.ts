@@ -50,6 +50,9 @@ import type {
     ChangePasswordRequest,
     ResetPasswordRequest,
     SuccessResponse,
+    PaginatedHistoryResponse,
+    PaginatedSessionResponse,
+    PaginatedQueueResponse,
 } from "@/types/api";
 
 // ── Error class ──────────────────────────────────────────────────
@@ -182,19 +185,36 @@ export const api = {
     },
 
     // ── Analytics ────────────────────────────────────────────────
-    getOverview(sessionId?: string, queueId?: string): Promise<AnalyticsOverview> {
+    getOverview(sessionId?: string, queueId?: string, recentLimit?: number, recentOffset?: number): Promise<AnalyticsOverview> {
         const params = new URLSearchParams();
         if (sessionId) params.append("session_id", sessionId);
         if (queueId) params.append("queue_id", queueId);
+        if (recentLimit != null) params.append("recent_limit", String(recentLimit));
+        if (recentOffset != null) params.append("recent_offset", String(recentOffset));
 
         const qs = params.toString();
         const url = qs ? `/analytics/overview?${qs}` : "/analytics/overview";
         return request<AnalyticsOverview>(url);
     },
 
+    getHistory(params: { sessionId?: string; queueId?: string; limit?: number; offset?: number } = {}): Promise<PaginatedHistoryResponse> {
+        const qs = new URLSearchParams();
+        if (params.sessionId) qs.set("session_id", params.sessionId);
+        if (params.queueId) qs.set("queue_id", params.queueId);
+        if (params.limit != null) qs.set("limit", String(params.limit));
+        if (params.offset != null) qs.set("offset", String(params.offset));
+
+        const q = qs.toString();
+        return request<PaginatedHistoryResponse>(`/analytics/history${q ? `?${q}` : ""}`);
+    },
+
     // ── Sessions ─────────────────────────────────────────────────
-    listSessions(): Promise<SessionResponse[]> {
-        return request<SessionResponse[]>("/sessions");
+    listSessions(limit?: number, offset?: number, sessionDate?: string): Promise<PaginatedSessionResponse> {
+        const ps = new URLSearchParams();
+        if (limit != null) ps.append("limit", String(limit));
+        if (offset != null) ps.append("offset", String(offset));
+        if (sessionDate) ps.append("session_date", sessionDate);
+        return request<PaginatedSessionResponse>(`/sessions${ps.toString() ? `?${ps}` : ""}`);
     },
 
     getSession(sessionId: string): Promise<SessionResponse> {
@@ -215,8 +235,12 @@ export const api = {
     },
 
     // ── Queues (session-scoped) ──────────────────────────────────
-    listSessionQueues(sessionId: string): Promise<QueueResponse[]> {
-        return request<QueueResponse[]>(`/sessions/${sessionId}/queues`);
+    listSessionQueues(sessionId: string, limit?: number, offset?: number, name?: string): Promise<PaginatedQueueResponse> {
+        const ps = new URLSearchParams();
+        if (limit != null) ps.append("limit", String(limit));
+        if (offset != null) ps.append("offset", String(offset));
+        if (name) ps.append("name", name);
+        return request<PaginatedQueueResponse>(`/sessions/${sessionId}/queues${ps.toString() ? `?${ps}` : ""}`);
     },
 
     createSessionQueue(sessionId: string, data: QueueCreate): Promise<QueueResponse> {

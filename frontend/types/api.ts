@@ -46,6 +46,8 @@ export interface TokenResponse {
 export interface JwtPayload {
     sub: string;       // user_id
     org_id: string | null;
+    org_slug: string | null;
+    org_name: string | null;
     role: string;
     exp: number;       // UNIX timestamp
     email: string;
@@ -60,6 +62,13 @@ export interface SessionResponse {
     title: string;
     created_at: string;
     queue_count: number;
+}
+
+export interface PaginatedSessionResponse {
+    items: SessionResponse[];
+    total: number;
+    limit: number;
+    offset: number;
 }
 
 export interface SessionCreate {
@@ -79,6 +88,13 @@ export interface QueueResponse {
     current_token_number: number;
     is_active: boolean;
     created_at: string;
+}
+
+export interface PaginatedQueueResponse {
+    items: QueueResponse[];
+    total: number;
+    limit: number;
+    offset: number;
 }
 
 export interface QueueCreate {
@@ -336,4 +352,25 @@ export interface ResetPasswordRequest {
 
 export interface SuccessResponse {
     message: string;
+}
+
+export interface TokenHistoryItem {
+    id: string;
+    token_number: number;
+    queue_name: string;
+    queue_prefix: string;
+    status: string;
+    customer_name: string;
+    customer_phone: string;
+    customer_age: number | null;
+    created_at: string;
+    served_at: string | null;
+    completed_at: string | null;
+}
+
+export interface PaginatedHistoryResponse {
+    items: TokenHistoryItem[];
+    total: number;
+    limit: number;
+    offset: number;
 }

@@ -9,6 +9,7 @@ Security rules:
 """
 import logging
 import uuid
+from typing import Callable
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -137,6 +138,18 @@ async def get_current_admin_or_staff(
     return current_user
 
 
+async def get_current_admin(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Allows access only to admins or super_admins."""
+    if current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user
+
+
 async def get_current_super_admin(
     current_user: User = Depends(get_current_user),
 ) -> User:
@@ -152,7 +165,7 @@ async def get_current_super_admin(
     return current_user
 
 
-def require_super_admin() -> callable:
+def require_super_admin() -> Callable:
     """
     Dependency that enforces the user has the 'super_admin' role.
     Usage:

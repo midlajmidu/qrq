@@ -3,14 +3,12 @@ app/services/analytics_service.py
 Service for fetching overview statistics and graphs.
 """
 import uuid
-from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.token import Token, TokenStatus
-from app.models.session import Session
 
 async def get_overview_metrics(
     db: AsyncSession,
@@ -18,15 +16,25 @@ async def get_overview_metrics(
     org_id: uuid.UUID,
     session_id: Optional[uuid.UUID] = None,
     queue_id: Optional[uuid.UUID] = None,
+    recent_limit: int = 5,
+    recent_offset: int = 0,
 ) -> dict:
     """Fetch aggregated metrics for the dashboard."""
     
     # Base conditions
     conditions = [Token.org_id == org_id]
-    if session_id:
-        conditions.append(Token.session_id == session_id)
+    
+    from app.models.queue import Queue
+    
     if queue_id:
         conditions.append(Token.queue_id == queue_id)
+    
+    # If session_id (date session) is provided, we must join with Queue or filter by a session_id on Token
+    # Current Token.session_id stores the rotating token_session_id, so we join to filter by date session.
+    join_queue = False
+    if session_id:
+        join_queue = True
+        conditions.append(Queue.session_id == session_id)
 
     # Filter out deleted tokens from most metrics
     active_conditions = conditions.copy()
@@ -35,6 +43,9 @@ async def get_overview_metrics(
 
     # 1. Status Counts
     count_query = select(Token.status, func.count(Token.id)).where(and_(*conditions)).group_by(Token.status)
+    if join_queue:
+        count_query = count_query.join(Queue, Token.queue_id == Queue.id)
+    
     count_result = await db.execute(count_query)
     
     counts = {s.value: 0 for s in TokenStatus}
@@ -57,6 +68,9 @@ async def get_overview_metrics(
         func.max(func.extract('epoch', Token.completed_at - Token.served_at)).label('max_serve_sec'),
     ).where(and_(*active_conditions))
     
+    if join_queue:
+        timing_query = timing_query.join(Queue, Token.queue_id == Queue.id)
+
     timing_res = await db.execute(timing_query)
     row = timing_res.first()
     
@@ -73,17 +87,22 @@ async def get_overview_metrics(
         func.count(Token.id)
     ).where(and_(*active_conditions)).group_by('hr').order_by('hr')
     
+    if join_queue:
+        hourly_query = hourly_query.join(Queue, Token.queue_id == Queue.id)
+
     hourly_res = await db.execute(hourly_query)
     hourly_data = [{"hour": f"{int(row[0]):02d}:00", "visits": row[1]} for row in hourly_res.all()]
 
     # 4. Monthly Chart - Exclude deleted
-    from sqlalchemy.sql.expression import true
     monthly_query = select(
         func.extract('month', Token.created_at).label('mon'),
         func.extract('year', Token.created_at).label('yr'),
         func.count(Token.id)
-    ).where(and_(Token.org_id == org_id, Token.status != TokenStatus.deleted)).group_by('yr', 'mon').order_by('yr', 'mon')
+    ).where(and_(*active_conditions)).group_by('yr', 'mon').order_by('yr', 'mon')
     
+    if join_queue:
+        monthly_query = monthly_query.join(Queue, Token.queue_id == Queue.id)
+
     monthly_res = await db.execute(monthly_query)
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     monthly_data = [{"month": f"{months[int(row[0])-1]} {int(row[1])}", "visits": row[2]} for row in monthly_res.all()]
@@ -97,8 +116,10 @@ async def get_overview_metrics(
         Queue.name.label('queue_name')
     ).join(Queue, Token.queue_id == Queue.id).where(
         and_(*active_conditions)
-    ).order_by(Token.created_at.desc()).limit(5)
+    ).order_by(Token.created_at.desc()).limit(recent_limit).offset(recent_offset)
     
+    # No special join needed for recent_activity as it already joins Queue
+
     recent_res = await db.execute(recent_query)
     recent_activity = [
         {
@@ -128,4 +149,69 @@ async def get_overview_metrics(
             "monthly": monthly_data,
         },
         "recent_activity": recent_activity
+    }
+
+async def get_history_details(
+    db: AsyncSession,
+    *,
+    org_id: uuid.UUID,
+    session_id: Optional[uuid.UUID] = None,
+    queue_id: Optional[uuid.UUID] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict:
+    """Fetch detailed token history with pagination and filters."""
+    from app.models.queue import Queue
+    
+    conditions = [Token.org_id == org_id, Token.status != TokenStatus.deleted]
+    if queue_id:
+        conditions.append(Token.queue_id == queue_id)
+    
+    join_queue = False
+    if session_id:
+        join_queue = True
+        conditions.append(Queue.session_id == session_id)
+
+    query = select(
+        Token,
+        Queue.name.label('queue_name'),
+        Queue.prefix.label('queue_prefix')
+    ).join(Queue, Token.queue_id == Queue.id).where(
+        and_(*conditions)
+    ).order_by(Token.created_at.desc())
+
+    # Count total for pagination
+    count_query = select(func.count(Token.id)).where(and_(*conditions))
+    if join_queue:
+        count_query = count_query.join(Queue, Token.queue_id == Queue.id)
+    
+    total_res = await db.execute(count_query)
+    total = total_res.scalar_one()
+
+    # Apply pagination
+    query = query.limit(limit).offset(offset)
+    result = await db.execute(query)
+    
+    items = []
+    for row in result.all():
+        token, q_name, q_prefix = row
+        items.append({
+            "id": str(token.id),
+            "token_number": token.token_number,
+            "queue_name": q_name,
+            "queue_prefix": q_prefix,
+            "status": token.status.value,
+            "customer_name": token.customer_name,
+            "customer_phone": token.customer_phone,
+            "customer_age": token.customer_age,
+            "created_at": token.created_at.isoformat(),
+            "served_at": token.served_at.isoformat() if token.served_at else None,
+            "completed_at": token.completed_at.isoformat() if token.completed_at else None,
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset
     }

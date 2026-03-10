@@ -6,14 +6,13 @@ All methods receive org_id from the authenticated JWT — never from request bod
 """
 import logging
 import uuid
-from datetime import datetime, timezone
 
-from sqlalchemy import func, select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.queue import Queue
-from app.models.token import Token, TokenStatus
-from app.schemas.queue import QueueCreate, QueueResponse
+from app.models.token import Token
+from app.schemas.queue import QueueCreate
 
 logger = logging.getLogger(__name__)
 
@@ -27,19 +26,17 @@ async def create_queue(
     *,
     org_id: uuid.UUID,
     data: QueueCreate,
-    session_id: uuid.UUID | None = None,
 ) -> Queue:
-    """Create a new queue under the given org, optionally inside a session."""
+    """Create a new queue under the given org."""
     queue = Queue(
         org_id=org_id,
         name=data.name,
         prefix=data.prefix,
-        session_id=session_id,
     )
     db.add(queue)
     await db.commit()
     await db.refresh(queue)
-    logger.info("Queue created | id=%s org=%s name=%r session=%s", queue.id, org_id, queue.name, session_id)
+    logger.info("Queue created | id=%s org=%s name=%r", queue.id, org_id, queue.name)
     return queue
 
 
@@ -47,12 +44,9 @@ async def list_queues(
     db: AsyncSession,
     *,
     org_id: uuid.UUID,
-    session_id: uuid.UUID | None = None,
 ) -> list[Queue]:
-    """List all queues belonging to an org, optionally filtered by session."""
+    """List all queues belonging to an org."""
     query = select(Queue).where(Queue.org_id == org_id)
-    if session_id is not None:
-        query = query.where(Queue.session_id == session_id)
     result = await db.execute(query.order_by(Queue.created_at.asc()))
     return list(result.scalars().all())
 
@@ -79,6 +73,22 @@ async def get_queue_or_404(
     return queue
 
 
+async def update_queue(
+    db: AsyncSession,
+    *,
+    queue_id: uuid.UUID,
+    org_id: uuid.UUID,
+    **kwargs,
+) -> Queue:
+    """Update arbitrary fields on a queue, adhering to DRY principles."""
+    queue = await get_queue_or_404(db, queue_id=queue_id, org_id=org_id)
+    for key, value in kwargs.items():
+        if hasattr(queue, key):
+            setattr(queue, key, value)
+    await db.commit()
+    await db.refresh(queue)
+    return queue
+
 async def set_queue_active(
     db: AsyncSession,
     *,
@@ -86,11 +96,7 @@ async def set_queue_active(
     org_id: uuid.UUID,
     is_active: bool,
 ) -> Queue:
-    queue = await get_queue_or_404(db, queue_id=queue_id, org_id=org_id)
-    queue.is_active = is_active
-    await db.commit()
-    await db.refresh(queue)
-    return queue
+    return await update_queue(db, queue_id=queue_id, org_id=org_id, is_active=is_active)
 
 async def set_queue_announcement(
     db: AsyncSession,
@@ -99,11 +105,7 @@ async def set_queue_announcement(
     org_id: uuid.UUID,
     announcement: str,
 ) -> Queue:
-    queue = await get_queue_or_404(db, queue_id=queue_id, org_id=org_id)
-    queue.announcement = announcement
-    await db.commit()
-    await db.refresh(queue)
-    return queue
+    return await update_queue(db, queue_id=queue_id, org_id=org_id, announcement=announcement)
 
 
 async def delete_queue(

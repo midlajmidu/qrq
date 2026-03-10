@@ -8,7 +8,6 @@ Security rules enforced here:
   - Deactivated orgs/users are rejected before token generation
 """
 import logging
-import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -88,6 +87,8 @@ async def authenticate_user(
         org_id=str(org.id),
         role=user.role,
         email=user.email,
+        org_slug=org.slug,
+        org_name=org.name,
     )
 
     logger.info("Login successful | user_id=%s org=%s role=%s", user.id, org_slug, user.role)

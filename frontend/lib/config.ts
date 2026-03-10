@@ -4,7 +4,7 @@
  * No env access anywhere else in the codebase.
  */
 
-const isServer = typeof window === "undefined";
+
 
 // Normalize URLs to remove trailing slashes for consistency
 const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";

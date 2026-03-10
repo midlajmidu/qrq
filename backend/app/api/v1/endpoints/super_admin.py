@@ -79,6 +79,7 @@ class OrgDetail(BaseModel):
     is_active: bool
     created_at: str
     admin_email: str | None = None
+    admin_initial_password: str | None = None
     admin_password_changed_at: str | None = None
 
     model_config = {"from_attributes": True}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <main className="flex flex-col items-center justify-center px-4 text-center bg-gradient-to-b from-white to-gray-50 py-20">
@@ -25,7 +25,7 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           {isAuthenticated ? (
             <Link
-              href="/dashboard"
+              href={user?.org_slug ? `/${user.org_slug}/dashboard` : "/dashboard"}
               className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-sm text-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               Go to Dashboard →

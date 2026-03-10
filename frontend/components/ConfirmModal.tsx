@@ -7,7 +7,7 @@ interface Props {
     title: string;
     message: string;
     confirmLabel?: string;
-    confirmVariant?: "danger" | "primary";
+    confirmVariant?: "danger" | "primary" | "warning";
     onConfirm: () => void;
     onCancel: () => void;
     isLoading?: boolean;
@@ -70,7 +70,9 @@ export default function ConfirmModal({
 
     const btnColor = confirmVariant === "danger"
         ? "bg-red-600 hover:bg-red-700 focus-visible:ring-red-500"
-        : "bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500";
+        : confirmVariant === "warning"
+            ? "bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-500"
+            : "bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500";
 
     return (
         <div

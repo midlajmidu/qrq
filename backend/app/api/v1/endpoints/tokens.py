@@ -36,7 +36,6 @@ async def get_token(
 ) -> TokenRestoreResponse:
     from sqlalchemy import select
     from app.models.queue import Queue
-    from app.models.token import Token
 
     # Join with Queue to get the prefix (used in restoration UI)
     result = await db.execute(

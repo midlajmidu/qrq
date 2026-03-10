@@ -1,15 +1,17 @@
 """
 app/models/queue.py
-Queue model — one per service line within an organization.
+Queue model — one per service line within an organization, grouped by session.
 
 Design decisions:
   - current_token_number is locked with SELECT FOR UPDATE during join/next
     to guarantee atomic increment with zero duplicates under concurrency.
   - prefix (e.g. "A", "B") lets orgs run labelled queues side-by-side.
-  - Unique(name, org_id, session_id) — same name is allowed in different orgs/sessions.
+  - Unique(name, org_id, session_id) — same name allowed in different sessions.
+  - session_id FK links to the sessions table for date-grouping.
 """
 import uuid
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import (
     Boolean,
@@ -42,7 +44,7 @@ class Queue(Base):
         nullable=False,
         index=True,
     )
-    session_id: Mapped[uuid.UUID] = mapped_column(
+    session_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("sessions.id", ondelete="CASCADE"),
         nullable=True,
@@ -63,9 +65,11 @@ class Queue(Base):
     )
 
     # ── Relationships ──────────────────────────────────────────────
-    session: Mapped["Session"] = relationship("Session", back_populates="queues")
     tokens: Mapped[list["Token"]] = relationship(  # noqa: F821
         "Token", back_populates="queue", lazy="noload"
+    )
+    session: Mapped[Optional["Session"]] = relationship(  # noqa: F821
+        "Session", back_populates="queues", lazy="noload"
     )
 
     def __repr__(self) -> str:

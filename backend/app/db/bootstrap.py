@@ -1,9 +1,8 @@
 import logging
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import engine
-from app.models.organization import Organization
 from app.models.user import User
 from app.core.security import hash_password
 
