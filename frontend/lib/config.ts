@@ -7,10 +7,7 @@
 
 
 // Normalize URLs to remove trailing slashes for consistency
-const isProd = process.env.NODE_ENV === "production";
-const fallbackDomain = isProd ? "https://q4queue-backend.onrender.com/api/v1" : "/api/v1";
-
-const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || fallbackDomain;
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
 const normalizedApiUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
 
 export const config = {
