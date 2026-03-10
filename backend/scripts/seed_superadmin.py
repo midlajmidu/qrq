@@ -17,7 +17,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from app.db.session import AsyncSessionLocal, connect_db
-from app.models.organization import Organization
 from app.models.user import User
 from app.core.security import hash_password
 

@@ -13,7 +13,6 @@ import time
 import uuid
 
 import pytest
-import httpx
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 

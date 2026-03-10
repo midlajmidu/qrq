@@ -2,7 +2,6 @@
 tests/integration/test_health.py
 PART 1 — Health endpoint behavior tests (Part 2A only; 2B/2C require container control).
 """
-import pytest
 from httpx import AsyncClient
 
 

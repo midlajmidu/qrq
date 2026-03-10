@@ -12,7 +12,7 @@ Routes:
 """
 import logging
 from datetime import date
-from typing import Optional
+from typing import NoReturn, Optional
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -32,8 +32,6 @@ router = APIRouter()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-
-from typing import NoReturn
 
 def _raise_404(exc: Exception) -> NoReturn:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))

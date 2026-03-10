@@ -13,10 +13,8 @@ import asyncio
 import uuid
 from collections import Counter
 
-import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_password
 from app.db.session import AsyncSessionLocal

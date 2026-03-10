@@ -9,13 +9,11 @@ Tests:
   - Audit logging doesn't crash on failure
   - DB pool recovery after brief overload
 """
-import asyncio
 import uuid
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.main import app
 from app.audit.service import record_event

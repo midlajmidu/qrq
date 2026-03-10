@@ -1,5 +1,4 @@
 import asyncio
-import uuid
 from sqlalchemy import select
 from app.db.session import engine
 from app.models.user import User
