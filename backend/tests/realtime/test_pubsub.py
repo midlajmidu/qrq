@@ -11,11 +11,9 @@ import asyncio
 import json
 import uuid
 
-import pytest
 import redis.asyncio as aioredis
 
 from app.core.config import get_settings
-from app.websocket.connection_manager import ConnectionManager, manager
 from app.websocket.pubsub import publish_queue_update
 
 settings = get_settings()
