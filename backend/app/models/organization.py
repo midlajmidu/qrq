@@ -7,7 +7,7 @@ Design:
   - is_active lets us deactivate a whole tenant without deleting data
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID

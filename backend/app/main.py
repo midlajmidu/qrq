@@ -20,12 +20,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.logging import setup_logging
-from app.db.session import connect_db, disconnect_db, engine
+from app.db.session import connect_db, disconnect_db
 from app.redis.client import connect_redis, disconnect_redis
 from app.websocket.pubsub import start_subscriber, stop_subscriber
 from app.monitoring.pool_monitor import start_pool_monitor, stop_pool_monitor
 from app.api.v1.router import api_router
 from app.websocket.routes import router as ws_router
+from app.middleware.request_id import RequestIdMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.middleware.logging_middleware import LoggingMiddleware
+from app.api.v1.endpoints import health as health_ep
 
 # ── Bootstrap logging ─────────────────────────────────────────────
 setup_logging()
@@ -109,15 +113,12 @@ app = FastAPI(
 # ── Middleware stack (order matters: first added = outermost) ─────
 
 # 1. Request ID (outermost — sets correlation ID for everything below)
-from app.middleware.request_id import RequestIdMiddleware
 app.add_middleware(RequestIdMiddleware)
 
 # 2. Security headers
-from app.middleware.security_headers import SecurityHeadersMiddleware
 app.add_middleware(SecurityHeadersMiddleware)
 
 # 3. Structured access logging
-from app.middleware.logging_middleware import LoggingMiddleware
 app.add_middleware(LoggingMiddleware)
 
 # 4. CORS (env-based origins)
@@ -144,7 +145,6 @@ if settings.METRICS_ENABLED:
 # ── REST routes ───────────────────────────────────────────────────
 app.include_router(api_router, prefix="/api/v1")
 
-from app.api.v1.endpoints import health as health_ep
 app.include_router(health_ep.router, prefix="", tags=["Health"])
 
 # ── WebSocket routes ──────────────────────────────────────────────

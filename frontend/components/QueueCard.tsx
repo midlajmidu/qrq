@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import type { QueueResponse } from "@/types/api";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -12,18 +13,38 @@ interface Props {
 }
 
 const QueueCard = React.memo(function QueueCard({ queue, onToggled }: Props) {
+    const { user } = useAuth();
+    const isStaff = user?.role === "staff";
+    const dashBase = user?.org_slug ? `/${user.org_slug}/dashboard` : "/dashboard";
+
+    const [isActive, setIsActive] = React.useState(queue.is_active);
     const [toggling, setToggling] = React.useState(false);
     const [deleting, setDeleting] = React.useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+    const [showToggleConfirm, setShowToggleConfirm] = React.useState(false);
     const [err, setErr] = React.useState<string | null>(null);
 
+    // Sync local state with prop when it changes (e.g. from parent re-fetch)
+    React.useEffect(() => {
+        setIsActive(queue.is_active);
+    }, [queue.is_active]);
+
     const handleToggle = async () => {
+        if (isActive && !showToggleConfirm) {
+            setShowToggleConfirm(true);
+            return;
+        }
+
+        const nextState = !isActive;
+        setIsActive(nextState); // Optimistic Update
         setToggling(true);
         setErr(null);
         try {
-            await api.toggleQueue(queue.id, !queue.is_active);
+            await api.toggleQueue(queue.id, nextState);
             onToggled();
+            setShowToggleConfirm(false);
         } catch (e: unknown) {
+            setIsActive(!nextState); // Rollback
             if (e instanceof ApiError) setErr(e.detail);
             else setErr("Failed to toggle queue");
         } finally {
@@ -51,8 +72,8 @@ const QueueCard = React.memo(function QueueCard({ queue, onToggled }: Props) {
             <div className="p-5">
                 <div className="flex items-start justify-between mb-3">
                     <h3 className="text-base font-semibold text-gray-900 truncate">{queue.name}</h3>
-                    <span className={`shrink-0 ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${queue.is_active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
-                        {queue.is_active ? "Active" : "Inactive"}
+                    <span className={`shrink-0 ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+                        {isActive ? "Active" : "Inactive"}
                     </span>
                 </div>
 
@@ -67,7 +88,7 @@ const QueueCard = React.memo(function QueueCard({ queue, onToggled }: Props) {
                     </div>
                     <div className="bg-gray-50 rounded-lg py-2">
                         <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Status</p>
-                        <p className="text-lg font-bold text-gray-900">{queue.is_active ? "Open" : "Closed"}</p>
+                        <p className="text-lg font-bold text-gray-900">{isActive ? "Open" : "Closed"}</p>
                     </div>
                 </div>
 
@@ -76,29 +97,44 @@ const QueueCard = React.memo(function QueueCard({ queue, onToggled }: Props) {
 
             <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-3 flex items-center gap-2">
                 <Link
-                    href={`/dashboard/queues/${queue.id}`}
+                    href={`${dashBase}/queues/${queue.id}`}
                     className="flex-1 text-center text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 py-1.5 rounded-lg transition-colors"
                 >
                     Manage
                 </Link>
-                <button
-                    onClick={handleToggle}
-                    disabled={toggling || deleting}
-                    className={`flex-1 text-center text-sm font-medium py-1.5 rounded-lg transition-colors disabled:opacity-50 ${queue.is_active ? "text-amber-700 bg-amber-50 hover:bg-amber-100" : "text-emerald-700 bg-emerald-50 hover:bg-emerald-100"}`}
-                >
-                    {toggling ? "..." : queue.is_active ? "Pause" : "Activate"}
-                </button>
-                <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    disabled={toggling || deleting}
-                    className="flex text-center justify-center items-center text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 text-red-700 bg-red-50 hover:bg-red-100"
-                    aria-label="Delete Queue"
-                >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
+                {!isStaff && (
+                    <>
+                        <button
+                            onClick={handleToggle}
+                            disabled={toggling || deleting}
+                            className={`flex-1 text-center text-sm font-medium py-1.5 rounded-lg transition-colors disabled:opacity-50 ${isActive ? "text-amber-700 bg-amber-50 hover:bg-amber-100" : "text-emerald-700 bg-emerald-50 hover:bg-emerald-100"}`}
+                        >
+                            {toggling ? "..." : isActive ? "End Queue" : "Start Queue"}
+                        </button>
+                        <button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            disabled={toggling || deleting}
+                            className="flex text-center justify-center items-center text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 text-red-700 bg-red-50 hover:bg-red-100"
+                            aria-label="Delete Queue"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </>
+                )}
             </div>
+
+            <ConfirmModal
+                isOpen={showToggleConfirm}
+                title="End Queue Session?"
+                message={`Are you sure you want to end the session for "${queue.name}"? New customers won't be able to join until you start it again.`}
+                confirmLabel="End Queue"
+                confirmVariant="warning"
+                onConfirm={handleToggle}
+                onCancel={() => setShowToggleConfirm(false)}
+                isLoading={toggling}
+            />
 
             <ConfirmModal
                 isOpen={showDeleteConfirm}

@@ -22,6 +22,7 @@ export default function QueueDetailPage({ params }: PageProps) {
     const token = getToken();
     const user = getCurrentUser();
     const isStaff = user?.role === "staff";
+    const dashBase = user?.org_slug ? `/${user.org_slug}/dashboard` : "/dashboard";
     const { toast } = useToast();
 
     const { state, status } = useQueueSocket(queueId, { token: token || undefined });
@@ -179,7 +180,7 @@ export default function QueueDetailPage({ params }: PageProps) {
         try {
             await api.deleteQueue(queueId);
             toast("Queue deleted successfully", "success");
-            router.push("/dashboard/queues");
+            router.push(`${dashBase}/queues`);
         } catch (err: unknown) {
             if (err instanceof ApiError) setActionError(err.detail);
             else setActionError("Failed to delete queue");
@@ -187,7 +188,7 @@ export default function QueueDetailPage({ params }: PageProps) {
         } finally {
             setDeleting(false);
         }
-    }, [queueId, router, toast]);
+    }, [queueId, router, dashBase, toast]);
 
     const [showAddForm, setShowAddForm] = useState(false);
     const [addName, setAddName] = useState("");
@@ -195,13 +196,17 @@ export default function QueueDetailPage({ params }: PageProps) {
     const [addAge, setAddAge] = useState("");
 
     const handleAddCustomer = useCallback(async () => {
-        if (!addName.trim() || !addPhone.trim()) return;
+        const phoneDigits = addPhone.replace(/\D/g, "");
+        if (!addName.trim() || phoneDigits.length !== 10) {
+            toast("Please enter name and 10 digit phone number", "error");
+            return;
+        }
         setActionLoading("add");
         setActionError(null);
         try {
             const res = await api.adminJoin(queueId, {
                 name: addName.trim(),
-                phone: addPhone.trim(),
+                phone: phoneDigits,
                 age: addAge ? parseInt(addAge, 10) : undefined,
             });
             toast(`Token ${state?.prefix || ""}${res.token_number} created`, "success");
@@ -326,7 +331,7 @@ export default function QueueDetailPage({ params }: PageProps) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                     <Link
-                        href="/dashboard/queues"
+                        href={`${dashBase}/queues`}
                         aria-label="Back to queues"
                         className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md p-1"
                     >
@@ -352,38 +357,21 @@ export default function QueueDetailPage({ params }: PageProps) {
 
                 <div className="flex items-center gap-3 flex-wrap">
                     <ConnectionBadge status={status} />
-                    <button
-                        onClick={async () => {
-                            const currentActive = state?.is_active ?? initialQueue?.is_active ?? true;
-                            setActionLoading("toggle-active");
-                            try {
-                                await api.toggleQueue(queueId, !currentActive);
-                                toast(!currentActive ? "Queue started" : "Queue ended", "success");
-                            } catch (err: unknown) {
-                                toast("Failed to toggle queue state", "error");
-                            } finally {
-                                setActionLoading(null);
-                            }
-                        }}
-                        disabled={actionLoading === "toggle-active"}
-                        className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 flex items-center gap-1 shadow-sm border ${(state?.is_active ?? initialQueue?.is_active)
-                            ? "text-red-600 bg-red-50 hover:bg-red-100 border-red-100 focus-visible:ring-red-500"
-                            : "text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-100 focus-visible:ring-emerald-500"
-                            }`}
-                        aria-label={(state?.is_active ?? initialQueue?.is_active) ? "Stop Queue" : "Start Queue"}
-                    >
-                        {(state?.is_active ?? initialQueue?.is_active) ? (
-                            <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                End Queue
-                            </>
-                        ) : (
-                            <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Start Queue
-                            </>
-                        )}
-                    </button>
+
+                    {!isStaff && (
+                        <button
+                            onClick={() => setShowResetConfirm(true)}
+                            disabled={isDisabled || resetting}
+                            className="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100 flex items-center gap-1 shadow-sm"
+                            aria-label="Reset Queue"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Reset
+                        </button>
+                    )}
+
                     {!isStaff && (
                         <button
                             onClick={() => setShowDeleteConfirm(true)}

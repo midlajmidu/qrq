@@ -71,8 +71,13 @@ export function useAuth(): UseAuthReturn {
                 const response = await api.login(credentials);
                 setToken(response.access_token);
                 setIsAuthed(true);
-                setUser(getCurrentUser());
-                router.push("/dashboard");
+                const currentUser = getCurrentUser();
+                setUser(currentUser);
+                if (currentUser && currentUser.org_slug) {
+                    router.push(`/${currentUser.org_slug}/dashboard`);
+                } else {
+                    router.push("/dashboard");
+                }
             } catch (err) {
                 if (err instanceof ApiError) {
                     if (err.status === 429) {

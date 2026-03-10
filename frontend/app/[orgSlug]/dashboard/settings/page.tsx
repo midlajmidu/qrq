@@ -112,7 +112,7 @@ export default function SettingsPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
                 <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
                     <h2 className="text-lg font-semibold text-gray-900">Clinic Information</h2>
-                    <p className="text-sm text-gray-500 mt-1">Update your organization's contact details.</p>
+                    <p className="text-sm text-gray-500 mt-1">Update your organization&apos;s contact details.</p>
                 </div>
 
                 <form onSubmit={handleSaveInfo} className="p-6 space-y-6">

@@ -3,6 +3,7 @@ app/schemas/queue.py
 Pydantic schemas for Queue and Token request/response.
 """
 import uuid
+import re
 from datetime import datetime
 from typing import Optional
 
@@ -25,6 +26,7 @@ class AnnouncementUpdate(BaseModel):
 class QueueResponse(BaseModel):
     id: uuid.UUID
     org_id: uuid.UUID
+    session_id: Optional[uuid.UUID] = None
     name: str
     prefix: str
     announcement: Optional[str] = None
@@ -41,12 +43,23 @@ class JoinRequest(BaseModel):
     """Customer details required to take a token."""
     name: str = Field(..., min_length=1, max_length=120)
     age: Optional[int] = Field(None, ge=0, le=150)
-    phone: str = Field(..., min_length=1, max_length=20)
+    phone: str = Field(..., min_length=10, max_length=15)
 
-    @field_validator("name", "phone", mode="before")
+    @field_validator("name", mode="before")
     @classmethod
     def strip_whitespace(cls, v: str) -> str:
         return v.strip() if isinstance(v, str) else v
+        
+    @field_validator("phone", mode="before")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        if not isinstance(v, str):
+            return v
+        # Remove all non-digits
+        digits = re.sub(r"\D", "", v)
+        if len(digits) != 10:
+            raise ValueError("Phone number must be exactly 10 digits")
+        return digits
 
 
 class JoinResponse(BaseModel):
@@ -112,3 +125,10 @@ class TokenResponse(BaseModel):
     customer_phone: str
 
     model_config = {"from_attributes": True}
+
+
+class PaginatedQueueResponse(BaseModel):
+    items: list[QueueResponse]
+    total: int
+    limit: int
+    offset: int
