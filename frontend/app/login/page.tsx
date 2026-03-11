@@ -24,18 +24,17 @@ export default function LoginPage() {
         <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50 px-4">
             <div className="w-full max-w-sm">
                 <div className="text-center mb-8">
-                    <Link href="/" className="inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1" aria-label="Go to home page">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center" aria-hidden="true">
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </div>
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-900 mt-4">Sign in to qrq</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Sign in</h1>
                     <p className="text-sm text-gray-500 mt-1">Enter your credentials to continue</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4" noValidate>
+                <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 pb-8 space-y-6" noValidate>
+                    <div className="text-center pt-2 pb-6 border-b border-gray-100">
+                        <Link href="/" className="inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1" aria-label="Go to home page">
+                            <img src="/assets/q4queue-logocropp.png" alt="q4queue Logo" className="h-10 w-auto object-contain" />
+                        </Link>
+                    </div>
+
                     {error && (
                         <div role="alert" className="bg-red-50 text-red-700 text-sm font-medium p-3 rounded-lg border border-red-100">
                             {error}
@@ -123,6 +122,6 @@ export default function LoginPage() {
                     </button>
                 </form>
             </div>
-        </main>
+        </main >
     );
 }
