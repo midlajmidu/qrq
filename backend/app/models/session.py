@@ -1,18 +1,26 @@
 """
 app/models/session.py
-Session model — groups queues for a specific date within an organization.
+Session (date-based) model — groups queues by date within an org.
 
-Design:
-  - session_date (date, not datetime) represents the day the session is for
-  - org_id + session_date is unique — only one session per date per org
-  - title is optional descriptive label (e.g. "Morning Clinic")
+Design decisions:
+  - One session per date per org (UNIQUE constraint).
+  - Optional title for human-readable labelling (e.g., "Morning Clinic").
+  - Cascades: deleting a session deletes all its queues and their tokens.
 """
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, ForeignKey, String, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
+from sqlalchemy import (
+    Date,
+    DateTime,
+    ForeignKey,
+    String,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import Optional, List
 
 from app.db.base_class import Base
 
@@ -34,14 +42,14 @@ class Session(Base):
         index=True,
     )
     session_date: Mapped[date] = mapped_column(Date, nullable=False)
-    title: Mapped[str] = mapped_column(String(200), nullable=True, default="")
+    title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
     # ── Relationships ──────────────────────────────────────────────
-    queues: Mapped[list["Queue"]] = relationship(
-        "Queue", back_populates="session", cascade="all, delete-orphan", lazy="noload"
+    queues: Mapped[List["Queue"]] = relationship(  # noqa: F821
+        "Queue", back_populates="session", lazy="noload"
     )
 
     def __repr__(self) -> str:

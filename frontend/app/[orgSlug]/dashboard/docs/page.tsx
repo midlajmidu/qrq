@@ -15,13 +15,13 @@ const DOCS_SECTIONS = [
         bg: "bg-amber-50",
         content: (
             <div className="space-y-4">
-                <p>Welcome to <strong>Q4Queue</strong>! Our platform is designed to make service management seamless and efficient. To get started, you'll first want to create a service queue.</p>
+                <p>Welcome to <strong>Q4Queue</strong>! Our platform is designed to make service management seamless and efficient. To get started, you&apos;ll first want to create a service queue.</p>
                 <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl">
                     <h4 className="font-bold text-slate-900 mb-2">The Quick Start Flow:</h4>
                     <ol className="list-decimal list-inside space-y-2 text-sm text-slate-600">
                         <li>Navigate to <strong>Manage Queues</strong> in the sidebar.</li>
-                        <li>Click <strong>"New Queue"</strong> and give your service a name (e.g., "Consultation Room A").</li>
-                        <li>Set a unique <strong>Prefix</strong> (e.g., "MED" or "SERV") to identify your tokens.</li>
+                        <li>Click <strong>&quot;New Queue&quot;</strong> and give your service a name (e.g., &quot;Consultation Room A&quot;).</li>
+                        <li>Set a unique <strong>Prefix</strong> (e.g., &quot;MED&quot; or &quot;SERV&quot;) to identify your tokens.</li>
                         <li>Activate your queue to start accepting digital joiners.</li>
                     </ol>
                 </div>
@@ -103,7 +103,7 @@ const DOCS_SECTIONS = [
                 <p>Every queue has a <strong>Public QR Code</strong> and a <strong>Digital Display</strong> URL.</p>
                 <ul className="list-disc list-inside space-y-2 text-sm text-slate-600 px-2">
                     <li><strong>Customer Join:</strong> Print the QR code so customers can join the queue from their own smartphones.</li>
-                    <li><strong>Live Display:</strong> Open the "Display URL" on a large TV or tablet in your waiting room to show live updates.</li>
+                    <li><strong>Live Display:</strong> Open the &quot;Display URL&quot; on a large TV or tablet in your waiting room to show live updates.</li>
                 </ul>
             </div>
         )
@@ -165,7 +165,7 @@ export default function DocumentationPage() {
 
                     <div className="mt-6 p-6 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-dashed border-slate-200">
                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Community</h4>
-                        <p className="text-sm text-slate-600 mb-4 italic">"Q4Queue has reduced our patient wait anxiety by 40%."</p>
+                        <p className="text-sm text-slate-600 mb-4 italic">&quot;Q4Queue has reduced our patient wait anxiety by 40%.&quot;</p>
                         <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">DR</div>
                             <span className="text-xs font-medium text-slate-500">Dr. Sarah Jensen</span>

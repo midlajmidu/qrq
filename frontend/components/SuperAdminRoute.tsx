@@ -16,29 +16,42 @@ export default function SuperAdminRoute({ children }: { children: ReactNode }) {
     const [allowed, setAllowed] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
-        const authed = isAuthenticated();
+    }, []);
 
-        if (!authed) {
-            console.warn("[SuperAdminRoute] Not authenticated, redirecting to login");
-            router.replace("/super-admin/login");
-            return;
-        }
+    useEffect(() => {
+        if (!mounted) return;
 
-        const user = getCurrentUser();
-        if (!user) {
-            console.warn("[SuperAdminRoute] Authenticated but no user payload found");
-            router.replace("/super-admin/login");
-            return;
-        }
+        const handleAuth = () => {
+            const authed = isAuthenticated();
+            if (!authed) {
+                console.warn("[SuperAdminRoute] Not authenticated, redirecting to login");
+                router.replace("/super-admin/login");
+                return;
+            }
 
-        if (user.role === "super_admin") {
-            setAllowed(true);
-        } else {
-            console.warn(`[SuperAdminRoute] Unauthorized role: ${user.role}, redirecting to /dashboard`);
-            router.replace("/dashboard");
-        }
-    }, [router]);
+            const user = getCurrentUser();
+            if (!user) {
+                console.warn("[SuperAdminRoute] Authenticated but no user payload found");
+                router.replace("/super-admin/login");
+                return;
+            }
+
+            if (user.role === "super_admin") {
+                setAllowed(true);
+            } else {
+                console.warn(`[SuperAdminRoute] Unauthorized role: ${user.role}, redirecting to /dashboard`);
+                if (user.org_slug) {
+                    router.replace(`/${user.org_slug}/dashboard`);
+                } else {
+                    router.replace("/dashboard");
+                }
+            }
+        };
+
+        handleAuth();
+    }, [mounted, router]);
 
     if (!mounted || !allowed) {
         return (

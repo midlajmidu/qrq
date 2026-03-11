@@ -6,7 +6,7 @@ import asyncio
 from logging.config import fileConfig
 
 from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
@@ -18,7 +18,6 @@ settings = get_settings()
 
 # Alembic Config object
 config = context.config
-import os
 
 database_url = settings.database_url_async
 if database_url:
@@ -37,7 +36,6 @@ target_metadata = Base.metadata
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
 
-    import os
     url = settings.database_url_async
     context.configure(
         url=url,
@@ -55,9 +53,7 @@ def do_run_migrations(connection):
         context.run_migrations()
 
 
-import os
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import pool
+
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode using async engine."""

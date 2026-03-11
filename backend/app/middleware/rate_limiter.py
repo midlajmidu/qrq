@@ -17,12 +17,12 @@ Usage:
 """
 import logging
 import time
-from typing import Optional
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import HTTPException, Request, status
 from redis.asyncio import Redis
 
 from app.redis.client import get_redis
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,6 @@ class RateLimitDependency:
 
 
 # ── Pre-built rate limiters for common endpoints ──────────────────────────────
-from app.core.config import get_settings
 
 _s = get_settings()
 

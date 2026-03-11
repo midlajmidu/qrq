@@ -15,10 +15,18 @@ export default function QueueQRCode({ queueId, queueName, isCollapsible = false,
     const [isExpanded, setIsExpanded] = useState(!isCollapsible);
     const qrRef = useRef<HTMLDivElement>(null);
 
+    const [isMounted, setIsMounted] = useState(false);
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!isMounted) return;
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setJoinUrl(`${baseUrl}/j/${queueId}`);
-    }, [queueId]);
+    }, [queueId, isMounted]);
 
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation();

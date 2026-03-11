@@ -9,12 +9,9 @@ Tests:
   - 429 response includes Retry-After header
   - Rate limiter degrades gracefully when Redis is unavailable
 """
-import asyncio
 import uuid
 
-import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_password
 from app.db.session import AsyncSessionLocal
@@ -80,11 +77,9 @@ class TestRateLimiting:
         queue_id, _, _ = await _provision("join-rl")
 
         async with _client() as client:
-            got_429 = False
             for _ in range(35):
                 resp = await client.post(f"/api/v1/queues/{queue_id}/join")
                 if resp.status_code == 429:
-                    got_429 = True
                     break
 
             # With 30/min limit, 35 requests should trigger 429
@@ -157,6 +152,6 @@ class TestMetricsEndpoint:
             # Hit health a bunch
             for _ in range(5):
                 await client.get("/health")
-            resp = await client.get("/metrics")
+            await client.get("/metrics")
             # Metrics page should not include /health in endpoint stats
             # (excluded via instrumentator config)

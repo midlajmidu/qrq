@@ -10,7 +10,6 @@ Tests:
 """
 import uuid
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -114,7 +113,8 @@ class TestMultiTenantLoginIsolation:
         self, client: AsyncClient, db: AsyncSession
     ):
         """JWT org_id claim must match the org that was logged into."""
-        import base64, json
+        import base64
+        import json
 
         slug = f"orgid-chk-{uuid.uuid4().hex[:6]}"
         org, _ = await _create_org_and_user(

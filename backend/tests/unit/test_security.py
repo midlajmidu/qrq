@@ -3,7 +3,6 @@ tests/unit/test_security.py
 PART 2 — Unit tests for password hashing and JWT token utilities.
 These run in-process with no network calls.
 """
-import time
 import uuid
 from datetime import timedelta
 
@@ -88,7 +87,8 @@ class TestJWTTokens:
         token = self._make_token()
         parts = token.split(".")
         # Replace payload with a different base64 segment
-        import base64, json
+        import base64
+        import json
         fake_payload = base64.urlsafe_b64encode(
             json.dumps({"sub": "hacked", "org_id": str(uuid.uuid4()), "role": "superadmin", "exp": 9999999999}).encode()
         ).rstrip(b"=").decode()

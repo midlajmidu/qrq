@@ -15,6 +15,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const pathname = usePathname();
     const isAdmin = user?.role === "admin";
     const isSuperAdmin = user?.role === "super_admin" || pathname.startsWith("/super-admin");
+    const dashBase = user?.org_slug ? `/${user.org_slug}/dashboard` : "/dashboard";
 
     // Close on mobile when navigating
     useEffect(() => {
@@ -27,8 +28,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     };
 
     const navLinkCls = (href: string) => {
-        const isActive = href === "/dashboard"
-            ? pathname === "/dashboard"
+        const isActive = href === dashBase
+            ? pathname === dashBase
             : (pathname === href || pathname.startsWith(href + "/"));
 
         return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${isActive
@@ -50,7 +51,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <aside className={`fixed inset-y-0 left-0 w-64 border-r z-50 transition-all duration-300 ease-in-out flex flex-col ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${isSuperAdmin ? "bg-slate-900 border-slate-800" : "bg-white border-gray-200"}`} role="complementary">
                 {/* Logo Section */}
                 <div className={`h-16 flex items-center px-6 border-b flex-shrink-0 ${isSuperAdmin ? "border-slate-800" : "border-gray-100"}`}>
-                    <Link href={isSuperAdmin ? "/super-admin" : "/dashboard"} className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg py-1">
+                    <Link href={isSuperAdmin ? "/super-admin" : dashBase} className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg py-1">
                         <div className={`${isSuperAdmin ? "bg-slate-700" : "bg-blue-600"} w-8 h-8 rounded-lg flex items-center justify-center`} aria-hidden="true">
                             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -81,21 +82,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         </>
                     ) : (
                         <>
-                            <Link href="/dashboard" className={navLinkCls("/dashboard")}>
+                            <Link href={dashBase} className={navLinkCls(dashBase)}>
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                                 </svg>
                                 Overview
                             </Link>
 
-                            <Link href="/dashboard/sessions" className={navLinkCls("/dashboard/sessions")}>
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <Link href={`${dashBase}/sessions`} className={navLinkCls(`${dashBase}/sessions`)}>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                                Manage Sessions
+                                Sessions
                             </Link>
 
-                            <Link href="/dashboard/history" className={navLinkCls("/dashboard/history")}>
+                            <Link href={`${dashBase}/history`} className={navLinkCls(`${dashBase}/history`)}>
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -104,20 +105,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                             {isAdmin && (
                                 <>
-                                    <Link href="/dashboard/staff" className={navLinkCls("/dashboard/staff")}>
+                                    <Link href={`${dashBase}/staff`} className={navLinkCls(`${dashBase}/staff`)}>
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
                                         Staff
                                     </Link>
-                                    <Link href="/dashboard/settings" className={navLinkCls("/dashboard/settings")}>
+                                    <Link href={`${dashBase}/settings`} className={navLinkCls(`${dashBase}/settings`)}>
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
                                         Settings
                                     </Link>
-                                    <Link href="/dashboard/docs" className={navLinkCls("/dashboard/docs")}>
+                                    <Link href={`${dashBase}/docs`} className={navLinkCls(`${dashBase}/docs`)}>
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                         </svg>
@@ -136,8 +137,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             {(user?.role || "U")[0].toUpperCase()}
                         </div>
                         <div className="flex flex-col min-w-0">
-                            <span className={`text-sm font-semibold truncate ${isSuperAdmin ? "text-white" : "text-gray-900"}`}>{formatRole(user?.role)}</span>
-                            <span className={`text-[10px] uppercase font-bold tracking-wider ${isSuperAdmin ? "text-slate-500" : "text-gray-400"}`}>Account</span>
+                            <span className={`text-sm font-bold truncate ${isSuperAdmin ? "text-white" : "text-gray-900"}`}>
+                                {user?.email || "User Account"}
+                            </span>
+                            <span className={`text-[10px] uppercase font-black tracking-widest ${isSuperAdmin ? "text-slate-400" : "text-blue-600"}`}>
+                                {formatRole(user?.role)} {user?.org_name ? `• ${user.org_name}` : ""}
+                            </span>
                         </div>
                     </div>
                     <button

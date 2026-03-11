@@ -2,7 +2,6 @@
 
 import React, { use, useState, useEffect, useCallback, useRef } from "react";
 import { useQueueSocket } from "@/hooks/useQueueSocket";
-import { playQueueSound } from "@/utils/playSound";
 import type { RecentToken } from "@/types/api";
 
 interface PageProps {
@@ -29,18 +28,24 @@ export default function DisplayQueuePage({ params }: PageProps) {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const previousServingRef = useRef<number | null>(null);
 
+    const [isMounted, setIsMounted] = useState(false);
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            const enabled = localStorage.getItem("display_sound_enabled") === "true";
-            setSoundEnabled(enabled);
-
-            // Pre-warm the audio context by loading the ringtone
-            const audio = new Audio("/sounds/ringtone-you-would-be-glad-to-know.mp3");
-            audio.preload = "auto";
-            audio.volume = 1.0;
-            audioRef.current = audio;
-        }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (!isMounted) return;
+        const enabled = localStorage.getItem("display_sound_enabled") === "true";
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSoundEnabled(enabled);
+
+        // Pre-warm the audio context by loading the ringtone
+        const audio = new Audio("/sounds/ringtone-you-would-be-glad-to-know.mp3");
+        audio.preload = "auto";
+        audio.volume = 1.0;
+        audioRef.current = audio;
+    }, [isMounted]);
 
     const handleEnableSound = useCallback(() => {
         if (audioRef.current) {

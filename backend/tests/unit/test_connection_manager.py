@@ -3,9 +3,8 @@ tests/unit/test_connection_manager.py
 Unit tests for the WebSocket ConnectionManager (no network needed).
 """
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
-import pytest
 
 from app.websocket.connection_manager import ConnectionManager
 

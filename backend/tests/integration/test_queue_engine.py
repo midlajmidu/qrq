@@ -12,13 +12,11 @@ Covers:
 """
 import uuid
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_password
 from app.models.organization import Organization
-from app.models.queue import Queue
 from app.models.token import Token, TokenStatus
 from app.models.user import User
 
@@ -281,7 +279,7 @@ class TestTokenLifecycle:
         headers = {"Authorization": f"Bearer {tok}"}
         q = await _create_queue(client, headers, f"LC Q {tag}")
         join = await client.post(f"/api/v1/queues/{q['id']}/join")
-        token_id = join.json()  # we only have token_number; need to get token ID via serving
+        join.json()  # we only have token_number; need to get token ID via serving
         return q["id"], headers, tok
 
     async def test_skip_waiting_token(
@@ -294,14 +292,13 @@ class TestTokenLifecycle:
 
         # Get token ID from DB directly via next (it returns the token being served)
         # For skip we need a waiting token — so join another and skip it
-        join2 = await client.post(f"/api/v1/queues/{q['id']}/join")
+        await client.post(f"/api/v1/queues/{q['id']}/join")
         # Call next to serve token 1; token 2 stays waiting
         next_r = await client.post(f"/api/v1/queues/{q['id']}/next", headers=headers)
         assert next_r.json()["serving"] == 1
 
         # Now get token 2 id from DB
         from sqlalchemy import select
-        from app.models.token import Token, TokenStatus
         from app.db.session import AsyncSessionLocal
         async with AsyncSessionLocal() as s:
             result = await s.execute(
@@ -331,7 +328,6 @@ class TestTokenLifecycle:
 
         # Get serving token id
         from sqlalchemy import select
-        from app.models.token import Token, TokenStatus
         from app.db.session import AsyncSessionLocal
         async with AsyncSessionLocal() as s:
             result = await s.execute(
@@ -357,7 +353,6 @@ class TestTokenLifecycle:
         await client.post(f"/api/v1/queues/{q['id']}/next", headers=headers)
 
         from sqlalchemy import select
-        from app.models.token import Token, TokenStatus
         from app.db.session import AsyncSessionLocal
         async with AsyncSessionLocal() as s:
             result = await s.execute(
@@ -382,7 +377,6 @@ class TestTokenLifecycle:
         await client.post(f"/api/v1/queues/{q['id']}/join")
 
         from sqlalchemy import select
-        from app.models.token import Token, TokenStatus
         from app.db.session import AsyncSessionLocal
         async with AsyncSessionLocal() as s:
             result = await s.execute(
@@ -411,7 +405,6 @@ class TestTokenLifecycle:
         await client.post(f"/api/v1/queues/{q['id']}/next", headers=headers_a)
 
         from sqlalchemy import select
-        from app.models.token import Token, TokenStatus
         from app.db.session import AsyncSessionLocal
         async with AsyncSessionLocal() as s:
             result = await s.execute(

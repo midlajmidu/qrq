@@ -14,12 +14,10 @@ Tests:
   9. Multiple clients on same queue
   10. Ping/pong keepalive
 """
-import asyncio
 import uuid
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_password
 from app.db.session import AsyncSessionLocal
@@ -81,7 +79,7 @@ class TestWebSocketConnect:
                 "GET",
                 f"/api/v1/ws/queues/{queue_id}",
                 headers={"connection": "upgrade", "upgrade": "websocket"},
-            ) as resp:
+            ):
                 # Note: httpx doesn't support real WS; we use the test client
                 pass
 
@@ -111,7 +109,7 @@ class TestWebSocketConnect:
         tc = TestClient(app)
         fake_id = str(uuid.uuid4())
         with pytest.raises(Exception):
-            with tc.websocket_connect(f"/api/v1/ws/queues/{fake_id}") as ws:
+            with tc.websocket_connect(f"/api/v1/ws/queues/{fake_id}"):
                 pass
 
     async def test_invalid_token_closes_4401(self):
@@ -121,7 +119,7 @@ class TestWebSocketConnect:
         with pytest.raises(Exception):
             with tc.websocket_connect(
                 f"/api/v1/ws/queues/{queue_id}?token=invalid.jwt.here"
-            ) as ws:
+            ):
                 pass
 
     async def test_wrong_org_token_closes_4403(self):
@@ -139,7 +137,7 @@ class TestWebSocketConnect:
         with pytest.raises(Exception):
             with tc.websocket_connect(
                 f"/api/v1/ws/queues/{queue_id_a}?token={wrong_jwt}"
-            ) as ws:
+            ):
                 pass
 
 

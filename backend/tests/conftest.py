@@ -6,18 +6,16 @@ The test suite connects to the RUNNING Docker services (postgres + redis).
 Run tests WITH docker-compose up active:
   docker-compose exec backend pytest tests/ -v
 """
-import asyncio
 import uuid
 from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_password
-from app.db.session import AsyncSessionLocal, engine
+from app.db.session import AsyncSessionLocal
 from app.main import app
 from app.models.organization import Organization
 from app.models.user import User

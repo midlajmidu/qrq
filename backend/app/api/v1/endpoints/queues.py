@@ -17,7 +17,7 @@ from typing import Union
 from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_active_user, get_current_admin_or_staff
+from app.core.deps import get_current_active_user, get_current_admin_or_staff, get_current_admin
 from app.db.deps import get_db
 from app.models.user import User
 from app.schemas.queue import (
@@ -67,7 +67,7 @@ def _raise_403(exc: Exception) -> None:
 async def create_queue(
     body: QueueCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_admin),
 ) -> QueueResponse:
     """Create a new queue for the authenticated organization."""
     try:
@@ -141,7 +141,7 @@ async def toggle_queue_active(
     queue_id: uuid.UUID,
     is_active: bool,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_admin),
 ) -> QueueResponse:
     """Activate or deactivate a queue."""
     try:
@@ -163,7 +163,7 @@ async def update_queue_announcement(
     body: AnnouncementUpdate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_admin),
 ) -> QueueResponse:
     """Update the announcement for a queue."""
     try:
@@ -189,7 +189,7 @@ async def update_queue_announcement(
 async def delete_queue(
     queue_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_admin),
 ) -> None:
     """Delete a specific queue."""
     try:
@@ -207,7 +207,7 @@ async def reset_queue(
     queue_id: uuid.UUID,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_admin),
 ) -> None:
     """Reset a specific queue."""
     try:
