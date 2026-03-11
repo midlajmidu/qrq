@@ -193,7 +193,7 @@ export default function DisplayQueuePage({ params }: PageProps) {
 
             {/* Footer — fixed position */}
             <div className="text-center py-3 text-gray-700 text-xs font-medium tracking-wider shrink-0">
-                qrq • Queue Management System
+                q4queue • Queue Management System
             </div>
         </main>
     );

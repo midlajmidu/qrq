@@ -81,7 +81,7 @@ const Navbar = () => {
         <div className="flex items-center gap-3">
           <Button
             size="default"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/get-started')}
             className="hidden md:flex gap-2 rounded-full px-6 font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.02] transition-all duration-300"
           >
             Get Started <ArrowRight className="w-4 h-4" />
@@ -108,7 +108,7 @@ const Navbar = () => {
           ))}
           <Button
             size="sm"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/get-started')}
             className="w-full gap-1.5 rounded-full font-semibold"
           >
             Get Started <ArrowRight className="w-3.5 h-3.5" />

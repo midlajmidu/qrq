@@ -7,9 +7,9 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const stats = [
-  { icon: Users, value: "10K+", label: "Visitors managed", iconBg: "bg-blue-500 shadow-md shadow-blue-500/20", iconColor: "text-white" },
-  { icon: Store, value: "500+", label: "Businesses", iconBg: "bg-violet-500 shadow-md shadow-violet-500/20", iconColor: "text-white" },
-  { icon: Clock, value: "< 2 min", label: "Avg setup time", iconBg: "bg-emerald-500 shadow-md shadow-emerald-500/20", iconColor: "text-white" },
+  { icon: Zap, value: "Live", label: "Real-time updates", iconBg: "bg-blue-500 shadow-md shadow-blue-500/20", iconColor: "text-white" },
+  { icon: QrCode, value: "No App", label: "Scan to join", iconBg: "bg-violet-500 shadow-md shadow-violet-500/20", iconColor: "text-white" },
+  { icon: Clock, value: "Instant", label: "Setup in seconds", iconBg: "bg-emerald-500 shadow-md shadow-emerald-500/20", iconColor: "text-white" },
 ];
 
 const floatingCards = [
@@ -83,13 +83,13 @@ const Hero = () => {
             <span className="text-gradient">happier customers.</span>
           </h1>
           <p className="mt-6 text-xl text-muted-foreground leading-relaxed max-w-lg">
-            Let your visitors wait from anywhere. Q4Q turns physical lines into
+            Let your visitors wait from anywhere. <strong>q4queue</strong> turns physical lines into
             digital queues — no app install, no hardware, no hassle.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
             <Button
               size="lg"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/get-started')}
               className="gap-2 text-base px-8 rounded-full font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] transition-all duration-300"
             >
               Set Up Your Queue <ArrowRight className="w-4 h-4" />

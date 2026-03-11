@@ -31,7 +31,7 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-10 md:gap-8">
           {/* Brand column */}
           <div className="col-span-2">
-            <Image src="/assets/q4queue-logo.png" alt="Q4Queue" width={140} height={40} className="h-10 w-auto" />
+            <Image src="/assets/q4queue-logocropp.png" alt="Q4Queue" width={140} height={36} className="h-9 w-auto" />
             <p className="mt-4 text-muted-foreground text-sm leading-relaxed max-w-xs">
               Turn physical lines into digital queues. No app install, no hardware, no hassle.
             </p>
@@ -97,7 +97,7 @@ const Footer = () => {
         {/* Bottom bar */}
         <div className="mt-12 pt-8 border-t border-gray-200/60 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Q4Q. All rights reserved.
+            © {new Date().getFullYear()} q4queue. All rights reserved.
           </p>
           {/* Social icons */}
           <div className="flex items-center gap-4">

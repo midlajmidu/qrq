@@ -87,7 +87,7 @@ export default function SuperAdminLoginPage() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="superadmin@qrq.internal"
+                            placeholder="superadmin@q4queue.internal"
                             required
                             autoComplete="email"
                             disabled={isLoading}

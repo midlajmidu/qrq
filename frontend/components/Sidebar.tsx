@@ -52,12 +52,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {/* Logo Section */}
                 <div className={`h-16 flex items-center px-6 border-b flex-shrink-0 ${isSuperAdmin ? "border-slate-800" : "border-gray-100"}`}>
                     <Link href={isSuperAdmin ? "/super-admin" : dashBase} className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg py-1">
-                        <div className={`${isSuperAdmin ? "bg-slate-700" : "bg-blue-600"} w-8 h-8 rounded-lg flex items-center justify-center`} aria-hidden="true">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </div>
-                        <span className={`text-xl font-bold tracking-tight ${isSuperAdmin ? "text-white" : "text-gray-900"}`}>Q4Queue</span>
+                        <img src="/assets/q4queue-logocropp.png" alt="q4queue Logo" className="h-9 w-auto object-contain" />
                     </Link>
                 </div>
 
