@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { Logo } from "@/components/ui/Logo";
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -52,7 +53,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {/* Logo Section */}
                 <div className={`h-16 flex items-center px-6 border-b flex-shrink-0 ${isSuperAdmin ? "border-slate-800" : "border-gray-100"}`}>
                     <Link href={isSuperAdmin ? "/super-admin" : dashBase} className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg py-1">
-                        <img src="/assets/q4queue-logocropp.png" alt="q4queue Logo" className="h-9 w-auto object-contain" />
+                        <Logo size="sm" className={isSuperAdmin ? "text-white" : ""} />
                     </Link>
                 </div>
 

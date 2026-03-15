@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 const productLinks = [
   { label: "Features", href: "#features" },
@@ -25,19 +26,23 @@ const legalLinks = [
 
 const Footer = () => {
   return (
-    <footer className="py-16 px-6 border-t border-gray-200/60 bg-background">
+    <footer className="relative py-16 px-6 border-t border-border/40 bg-background">
+      {/* Subtle gradient glow at top */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       <div className="max-w-6xl mx-auto">
         {/* Main footer grid */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-10 md:gap-8">
           {/* Brand column */}
           <div className="col-span-2">
-            <Image src="/assets/q4queue-logocropp.png" alt="Q4Queue" width={140} height={36} className="h-9 w-auto" />
-            <p className="mt-4 text-muted-foreground text-sm leading-relaxed max-w-xs">
+            <a href="/">
+              <Logo size="md" />
+            </a>
+            <p className="mt-4 text-muted-foreground text-sm leading-relaxed max-w-xs font-heading">
               Turn physical lines into digital queues. No app install, no hardware, no hassle.
             </p>
             {/* Newsletter */}
             <div className="mt-6">
-              <p className="text-sm font-semibold text-foreground mb-2">Stay updated</p>
+              <p className="text-sm font-heading font-semibold text-foreground mb-2">Stay updated</p>
               <div className="flex gap-2">
                 <input
                   type="email"
@@ -53,11 +58,11 @@ const Footer = () => {
 
           {/* Product links */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-4">Product</h4>
+            <h4 className="text-sm font-heading font-semibold text-foreground mb-4">Product</h4>
             <ul className="space-y-2.5">
               {productLinks.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+                  <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 hover:underline underline-offset-4">
                     {link.label}
                   </a>
                 </li>
@@ -67,11 +72,11 @@ const Footer = () => {
 
           {/* Company links */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-4">Company</h4>
+            <h4 className="text-sm font-heading font-semibold text-foreground mb-4">Company</h4>
             <ul className="space-y-2.5">
               {companyLinks.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+                  <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 hover:underline underline-offset-4">
                     {link.label}
                   </a>
                 </li>
@@ -81,11 +86,11 @@ const Footer = () => {
 
           {/* Legal links */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-4">Legal</h4>
+            <h4 className="text-sm font-heading font-semibold text-foreground mb-4">Legal</h4>
             <ul className="space-y-2.5">
               {legalLinks.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+                  <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 hover:underline underline-offset-4">
                     {link.label}
                   </a>
                 </li>

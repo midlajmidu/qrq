@@ -10,10 +10,7 @@ const CTA = () => {
   return (
     <section className="py-24 md:py-32 px-6">
       <AnimatedSection className="max-w-4xl mx-auto">
-        <div className="relative rounded-3xl overflow-hidden px-8 py-16 md:px-16 md:py-20 text-center"
-          style={{
-            background: "linear-gradient(135deg, hsl(225 84% 55%), hsl(250 76% 50%), hsl(280 70% 50%))",
-          }}
+        <div className="relative rounded-3xl overflow-hidden px-8 py-16 md:px-16 md:py-20 text-center bg-gradient-primary"
         >
           {/* Decorative shapes */}
           <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4" />
@@ -24,7 +21,7 @@ const CTA = () => {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,white/5_1px,transparent_1px),linear-gradient(to_bottom,white/5_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-30" />
 
           <div className="relative">
-            <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-primary-foreground">
+            <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-[-0.02em] text-primary-foreground">
               Ready to ditch the line?
             </h2>
             <p className="mt-5 text-xl text-primary-foreground/80 max-w-lg mx-auto leading-relaxed">
@@ -32,7 +29,7 @@ const CTA = () => {
             </p>
 
             {/* Early adopter badge */}
-            <div className="mt-8 inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-primary-foreground/80 text-sm font-medium px-4 py-2 rounded-full border border-white/15">
+            <div className="mt-8 inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-primary-foreground/80 text-sm font-heading font-medium px-4 py-2 rounded-full border border-white/15">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Now accepting early adopters
             </div>
