@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
+import { CheckCircle2, ArrowRight, Zap, Clock, QrCode } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 export default function GetStartedPage() {
     const [submitted, setSubmitted] = useState(false);
@@ -52,51 +55,118 @@ export default function GetStartedPage() {
     };
 
     return (
-        <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
-            <div className="w-full max-w-md">
-                {submitted ? (
-                    <>
-                        <div className="text-center mb-8">
-                            <h1 className="text-3xl font-bold text-gray-900">Request Received</h1>
-                        </div>
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center space-y-6">
-                            <div className="pb-6 border-b border-gray-100">
-                                <Link href="/" className="inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1" aria-label="Go to home page">
-                                    <Image src="/assets/q4queue-logocropp.png" alt="q4queue Logo" width={150} height={48} className="h-10 w-auto object-contain" />
-                                </Link>
+        <main className="min-h-screen h-screen relative flex items-center justify-center bg-hero-glow overflow-hidden">
+            {/* Background grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(220_16%_90%/0.5)_1px,transparent_1px),linear-gradient(to_bottom,hsl(220_16%_90%/0.5)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black_70%,transparent_100%)] pointer-events-none" />
+            <div className="absolute top-20 left-[10%] w-72 h-72 bg-primary/8 rounded-full blur-[120px] animate-pulse pointer-events-none" />
+            <div className="absolute bottom-20 right-[10%] w-56 h-56 bg-accent/8 rounded-full blur-[100px] animate-pulse pointer-events-none" />
+
+            {/* Two-column layout */}
+            <div className="w-full max-w-6xl mx-auto px-6 lg:px-8 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center relative z-10">
+
+                {/* Left Column: Branding & Benefits */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    className="hidden lg:flex flex-col justify-center"
+                >
+                    <Link href="/" className="inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1 mb-10 w-fit" aria-label="Go to home page">
+                        <Logo size="lg" />
+                    </Link>
+
+                    <h1 className="font-heading text-4xl xl:text-5xl font-extrabold tracking-tight text-foreground leading-[1.15]">
+                        Transform your <br />
+                        waiting <span className="text-gradient">experience.</span>
+                    </h1>
+
+                    <p className="text-lg text-muted-foreground mt-6 leading-relaxed max-w-md">
+                        Join modern organizations prioritizing customer happiness. Set up your smart digital queue in minutes — no app download required.
+                    </p>
+
+                    {/* Trust indicators with colored icon badges */}
+                    <div className="mt-10 flex flex-col gap-5">
+                        {[
+                            { icon: Zap, text: "Instant setup, zero hardware limits", color: "bg-primary" },
+                            { icon: Clock, text: "Real-time positioning for customers", color: "bg-emerald-500" },
+                            { icon: QrCode, text: "Scan to join — no app download needed", color: "bg-accent" },
+                        ].map(({ icon: Icon, text, color }, index) => (
+                            <motion.div
+                                key={text}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, delay: 0.4 + (index * 0.1) }}
+                                className="flex items-center gap-3 text-muted-foreground"
+                            >
+                                <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center shrink-0 shadow-sm`}>
+                                    <Icon className="w-4 h-4 text-white" />
+                                </div>
+                                <span className="text-sm font-medium">{text}</span>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+
+                {/* Right Column: Form Card */}
+                <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                    className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto"
+                >
+                    {/* Mobile-only logo */}
+                    <div className="lg:hidden text-center mb-6 flex justify-center">
+                        <Link href="/" className="inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1" aria-label="Go to home page">
+                            <Logo size="md" />
+                        </Link>
+                    </div>
+
+                    {submitted ? (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                            <div className="glass-card rounded-2xl p-8 md:p-10 text-center space-y-6" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px -4px rgba(0,0,0,0.06)" }}>
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
+                                    className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-inner border border-emerald-100"
+                                >
+                                    <CheckCircle2 className="w-8 h-8" />
+                                </motion.div>
+
+                                <div className="space-y-2">
+                                    <h2 className="text-2xl font-bold text-foreground">Request <span className="text-gradient">Received</span></h2>
+                                    <p className="text-sm text-muted-foreground leading-relaxed px-2">
+                                        Thank you! We have received your details. Our team will contact you shortly to get you set up.
+                                    </p>
+                                </div>
+
+                                <div className="pt-4">
+                                    <Link
+                                        href="/"
+                                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-semibold transition-colors focus:outline-none"
+                                    >
+                                        Return to Home <ArrowRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <div className="glass-card rounded-2xl p-7 md:p-8 space-y-5" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px -4px rgba(0,0,0,0.06)" }}>
+                            {/* Card header */}
+                            <div className="pb-4 border-b border-border/50">
+                                <h2 className="font-heading text-xl font-bold text-foreground">
+                                    Start your <span className="text-gradient">free trial</span>
+                                </h2>
+                                <p className="text-sm text-muted-foreground mt-1.5">Get early access to Q4Queue today.</p>
                             </div>
 
-                            <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <h2 className="text-2xl font-semibold text-gray-900">Thank You!</h2>
-                            <p className="text-gray-600">
-                                We have received your details. We will contact you soon.
-                            </p>
-                            <div className="pt-6">
-                                <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
-                                    Return to Home
-                                </Link>
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <div className="text-center mb-8">
-                            <h1 className="text-3xl font-bold text-gray-900">Get Started</h1>
-                            <p className="text-gray-500 mt-2">Tell us a bit about your organization.</p>
-                        </div>
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-8">
-                            <div className="text-center pb-6 border-b border-gray-100">
-                                <Link href="/" className="inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1" aria-label="Go to home page">
-                                    <Image src="/assets/q4queue-logocropp.png" alt="q4queue Logo" width={150} height={48} className="h-10 w-auto object-contain" />
-                                </Link>
-                            </div>
-                            <form onSubmit={handleSubmit} className="space-y-5">
+                            <form onSubmit={handleSubmit} className="space-y-4">
                                 <div>
-                                    <label htmlFor="orgName" className="block text-sm font-medium text-gray-700 mb-1">Organization Name</label>
+                                    <label htmlFor="orgName" className="block text-sm font-semibold text-foreground mb-1.5">Organization Name</label>
                                     <input
                                         id="orgName"
                                         name="orgName"
@@ -104,20 +174,20 @@ export default function GetStartedPage() {
                                         required
                                         value={formData.orgName}
                                         onChange={handleChange}
-                                        className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors"
+                                        className="w-full rounded-xl border border-input bg-white/50 px-4 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-muted-foreground"
                                         placeholder="e.g. Acme Corp"
                                     />
                                 </div>
 
                                 <div>
-                                    <label htmlFor="companyType" className="block text-sm font-medium text-gray-700 mb-1">Company Type</label>
+                                    <label htmlFor="companyType" className="block text-sm font-semibold text-foreground mb-1.5">Company Type</label>
                                     <select
                                         id="companyType"
                                         name="companyType"
                                         required
                                         value={formData.companyType}
                                         onChange={handleChange}
-                                        className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors bg-white"
+                                        className="w-full rounded-xl border border-input bg-white/50 px-4 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all appearance-none"
                                     >
                                         <option value="" disabled>Select a type...</option>
                                         <option value="clinic">Clinic / Hospital</option>
@@ -130,7 +200,7 @@ export default function GetStartedPage() {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                                    <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-1.5">Contact Email</label>
                                     <input
                                         id="email"
                                         name="email"
@@ -138,32 +208,38 @@ export default function GetStartedPage() {
                                         required
                                         value={formData.email}
                                         onChange={handleChange}
-                                        className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors"
+                                        className="w-full rounded-xl border border-input bg-white/50 px-4 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-muted-foreground"
                                         placeholder="you@example.com"
                                     />
                                 </div>
 
                                 <div>
-                                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+                                    <label htmlFor="phone" className="block text-sm font-semibold text-foreground mb-1.5">Phone Number <span className="text-muted-foreground font-normal">(Optional)</span></label>
                                     <input
                                         id="phone"
                                         name="phone"
                                         type="tel"
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors"
+                                        className="w-full rounded-xl border border-input bg-white/50 px-4 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-muted-foreground"
                                         placeholder="+1 (555) 000-0000"
                                     />
                                 </div>
 
                                 {submitError && (
-                                    <p className="text-sm text-red-600 text-center">{submitError}</p>
+                                    <motion.p
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-sm font-medium text-destructive text-center bg-destructive/10 py-2 px-3 rounded-lg"
+                                    >
+                                        {submitError}
+                                    </motion.p>
                                 )}
 
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full py-2.5 mt-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="w-full h-11 mt-4 bg-primary text-primary-foreground font-semibold rounded-full shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-70 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -174,23 +250,26 @@ export default function GetStartedPage() {
                                             Submitting...
                                         </>
                                     ) : (
-                                        "Submit Details"
+                                        <>
+                                            Submit Details <ArrowRight className="w-4 h-4 ml-1" />
+                                        </>
                                     )}
                                 </button>
                             </form>
 
-                            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-                                <p className="text-sm text-gray-600">
+                            <div className="pt-4 border-t border-border/50 text-center">
+                                <p className="text-sm text-muted-foreground">
                                     Already have an account?{" "}
-                                    <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium ml-1">
+                                    <Link href="/login" className="text-primary hover:text-primary/80 font-semibold ml-1 transition-colors">
                                         Log in
                                     </Link>
                                 </p>
                             </div>
                         </div>
-                    </>
-                )}
+                    )}
+                </motion.div>
             </div>
         </main>
     );
 }
+

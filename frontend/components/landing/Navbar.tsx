@@ -5,16 +5,20 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { Logo } from "@/components/ui/Logo";
 
 const navLinks = [
-  { href: "#features", label: "Features" },
-  { href: "#how-it-works", label: "How It Works" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#features", label: "Features", scroll: true },
+  { href: "/#how-it-works", label: "How It Works", scroll: true },
+  { href: "/#faq", label: "FAQ", scroll: true },
+  { href: "/about", label: "About", scroll: false },
 ];
 
 const Navbar = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const [active, setActive] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -26,23 +30,32 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    const sections = navLinks.map((l) => document.querySelector(l.href));
+    if (pathname !== "/") return;
+    const scrollLinks = navLinks.filter((l) => l.scroll);
+    const sections = scrollLinks.map((l) => document.querySelector(l.href.replace("/", "")));
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) setActive("#" + entry.target.id);
+          if (entry.isIntersecting) setActive((entry.target as Element).id ? "#" + (entry.target as Element).id : "");
         });
       },
       { rootMargin: "-40% 0px -55% 0px" }
     );
     sections.forEach((s) => s && observer.observe(s));
     return () => observer.disconnect();
-  }, []);
+  }, [pathname]);
 
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (pathname === "/about") setActive("/about");
+  }, [pathname]);
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, link: (typeof navLinks)[0]) => {
     setMobileOpen(false);
-    document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+    if (!link.scroll) return;
+    e.preventDefault();
+    const hash = link.href.split("#")[1];
+    if (hash && pathname === "/") document.querySelector("#" + hash)?.scrollIntoView({ behavior: "smooth" });
+    else router.push(link.href);
   };
 
   return (
@@ -55,34 +68,57 @@ const Navbar = () => {
       )}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 md:h-20 flex items-center justify-between">
-        <a href="/" className="flex items-center">
-          <Image src="/assets/q4queue-logo.png" alt="Q4Queue" width={320} height={100} className="w-auto h-16 md:h-20 scale-[1.35] md:scale-[1.75] origin-left" priority />
+        <a href="/">
+          <Logo size="lg" />
         </a>
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={(e) => handleClick(e, link.href)}
-              className={cn(
-                "text-base transition-colors duration-200 relative",
-                active === link.href
-                  ? "text-foreground font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {link.label}
-              {active === link.href && (
-                <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full" />
-              )}
-            </a>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = link.scroll ? active === "#" + link.href.split("#")[1] : active === link.href;
+            const content = (
+              <>
+                {link.label}
+                {isActive && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                )}
+              </>
+            );
+            return link.scroll ? (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link)}
+                className={cn(
+                  "text-sm font-heading font-medium transition-colors duration-200 relative tracking-wide",
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {content}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "text-sm font-heading font-medium transition-colors duration-200 relative tracking-wide",
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {content}
+              </Link>
+            );
+          })}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <a
+            href="/login"
+            className="hidden md:inline-block text-sm font-heading font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Log in
+          </a>
           <Button
             size="default"
             onClick={() => router.push('/get-started')}
-            className="hidden md:flex gap-2 rounded-full px-6 font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.02] transition-all duration-300"
+            className="hidden md:flex gap-2 rounded-full px-6 font-heading font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.02] transition-all duration-300"
           >
             Get Started <ArrowRight className="w-4 h-4" />
           </Button>
@@ -96,16 +132,27 @@ const Navbar = () => {
       </div>
       {mobileOpen && (
         <div className="md:hidden bg-background/95 backdrop-blur-xl border-b border-border/40 px-6 pb-4 space-y-3">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={(e) => handleClick(e, link.href)}
-              className="block text-sm text-muted-foreground hover:text-foreground py-1.5 transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            link.scroll ? (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link)}
+                className="block text-sm text-muted-foreground hover:text-foreground py-1.5 transition-colors"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm text-muted-foreground hover:text-foreground py-1.5 transition-colors"
+              >
+                {link.label}
+              </Link>
+            )
+          )}
           <Button
             size="sm"
             onClick={() => router.push('/get-started')}

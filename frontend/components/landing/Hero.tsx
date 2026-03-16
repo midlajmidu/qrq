@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Play, Users, Clock, Store, QrCode, Zap, Bell, Shield } from "lucide-react";
+import { ArrowRight, Play, QrCode, Zap, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -12,49 +12,6 @@ const stats = [
   { icon: Clock, value: "Instant", label: "Setup in seconds", iconBg: "bg-emerald-500 shadow-md shadow-emerald-500/20", iconColor: "text-white" },
 ];
 
-const floatingCards = [
-  {
-    icon: QrCode,
-    title: "Scan to Join",
-    desc: "No app download needed",
-    position: "absolute -left-16 top-[4%] z-10",
-    from: { opacity: 0, x: -24 },
-    delay: 0.8,
-    iconBg: "bg-blue-500 shadow-md shadow-blue-500/20",
-    iconColor: "text-white",
-  },
-  {
-    icon: Zap,
-    title: "Real-time Updates",
-    desc: "Live position tracking",
-    position: "absolute -right-8 top-[22%] z-10",
-    from: { opacity: 0, x: 24 },
-    delay: 1.0,
-    iconBg: "bg-amber-500 shadow-md shadow-amber-500/20",
-    iconColor: "text-white",
-  },
-  {
-    icon: Bell,
-    title: "Smart Alerts",
-    desc: "Notified when it's your turn",
-    position: "absolute -left-14 bottom-[24%] z-10",
-    from: { opacity: 0, x: -24 },
-    delay: 1.2,
-    iconBg: "bg-emerald-500 shadow-md shadow-emerald-500/20",
-    iconColor: "text-white",
-  },
-  {
-    icon: Shield,
-    title: "99.9% Uptime",
-    desc: "Enterprise-grade reliability",
-    position: "absolute -right-8 bottom-[6%] z-10",
-    from: { opacity: 0, x: 24 },
-    delay: 1.4,
-    iconBg: "bg-violet-500 shadow-md shadow-violet-500/20",
-    iconColor: "text-white",
-  },
-];
-
 const Hero = () => {
   const router = useRouter();
 
@@ -64,148 +21,266 @@ const Hero = () => {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(220_16%_90%/0.5)_1px,transparent_1px),linear-gradient(to_bottom,hsl(220_16%_90%/0.5)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black_70%,transparent_100%)]" />
 
       {/* Floating orbs */}
-      <div className="absolute top-20 left-[10%] w-72 h-72 bg-primary/8 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-20 right-[10%] w-56 h-56 bg-accent/8 rounded-full blur-[100px] animate-pulse" />
+      <div className="absolute top-10 left-[5%] w-96 h-96 bg-primary/10 rounded-full blur-[140px] animate-pulse" />
+      <div className="absolute bottom-10 right-[5%] w-72 h-72 bg-accent/10 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/3 w-[500px] h-[400px] bg-primary/5 rounded-full blur-[160px]" />
 
-      <div className="relative max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+      <div className="relative max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
+        {/* Left — Copy */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="inline-flex items-center gap-2 bg-primary/8 text-primary text-sm font-semibold px-5 py-2.5 rounded-full mb-6 border border-primary/15 backdrop-blur-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+          {/* Beta badge */}
+          <motion.div
+            className="inline-flex items-center gap-2 bg-primary/8 text-primary text-sm font-heading font-semibold px-5 py-2.5 rounded-full mb-6 border border-primary/15 backdrop-blur-sm shadow-sm shadow-primary/5"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+            </span>
             Now in public beta
-          </div>
-          <h1 className="font-heading text-5xl sm:text-6xl lg:text-[4rem] font-extrabold leading-[1.08] tracking-tight text-foreground">
+          </motion.div>
+
+          {/* Headline */}
+          <h1 className="font-heading text-5xl sm:text-6xl lg:text-[4.25rem] font-extrabold leading-[1.06] tracking-[-0.025em] text-foreground">
             Smarter queues,
             <br />
             <span className="text-gradient">happier customers.</span>
           </h1>
-          <p className="mt-6 text-xl text-muted-foreground leading-relaxed max-w-lg">
-            Let your visitors wait from anywhere. <strong>q4queue</strong> turns physical lines into
+
+          {/* Subhead */}
+          <p className="mt-6 text-lg md:text-xl text-muted-foreground leading-relaxed max-w-lg">
+            Let your visitors wait from anywhere. <strong className="text-foreground font-semibold">q4queue</strong> turns physical lines into
             digital queues — no app install, no hardware, no hassle.
           </p>
+
+          {/* CTAs */}
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
             <Button
               size="lg"
               onClick={() => router.push('/get-started')}
-              className="gap-2 text-base px-8 rounded-full font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] transition-all duration-300"
+              className="gap-2 text-base px-8 rounded-full font-heading font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] transition-all duration-300"
             >
               Set Up Your Queue <ArrowRight className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="lg" className="text-base px-8 rounded-full font-semibold gap-2 hover:bg-primary/5 transition-all duration-300">
+            <Button variant="outline" size="lg" className="text-base px-8 rounded-full font-heading font-semibold gap-2 hover:bg-primary/5 border-border/60 transition-all duration-300">
               <Play className="w-4 h-4" /> Watch Demo
             </Button>
           </div>
-          <div className="mt-6 flex items-center gap-5 text-sm text-muted-foreground">
-            {["1-week free trial", "No sign-up required", "Set up in minutes"].map((text) => (
-              <span key={text} className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+
+          {/* Social proof row */}
+          <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
+            {["1-week free trial", "No sign-up required", "Set up in minutes"].map((text, i) => (
+              <motion.span
+                key={text}
+                className="flex items-center gap-1.5 font-medium"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.6 + i * 0.1 }}
+              >
+                <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
                 </svg>
                 {text}
-              </span>
+              </motion.span>
             ))}
           </div>
         </motion.div>
 
-        {/* Phone + feature cards */}
+        {/* Right — Dashboard mockup */}
         <motion.div
-          className="relative flex justify-center py-6"
+          className="relative"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
         >
           {/* Background glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/12 rounded-full blur-[100px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-br from-primary/12 via-accent/8 to-primary/4 rounded-full blur-[100px]" />
 
-          {/* Phone */}
-          <Image
-            src="/assets/hero-phone-mockup.png"
-            alt="Q4Q queue management app on a smartphone"
-            width={300}
-            height={600}
-            className="relative w-full max-w-[300px] drop-shadow-2xl z-[2]"
-          />
-
-          {/* Feature cards */}
-          {floatingCards.map((card, index) => (
-            <motion.div
-              key={card.title}
-              className={`${card.position} w-[195px]`}
-              initial={{ ...card.from, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              transition={{ duration: 0.5, delay: card.delay, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <motion.div
-                className="rounded-xl bg-white border border-gray-200/60 px-4 py-3.5 backdrop-blur-sm"
-                style={{
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 6px 24px -2px rgba(0,0,0,0.06)",
-                }}
-                animate={{ y: [0, -4, 0] }}
-                transition={{
-                  duration: 4 + index * 0.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: card.delay + 1,
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-lg ${card.iconBg} flex items-center justify-center shrink-0`}>
-                    <card.icon className={`w-[18px] h-[18px] ${card.iconColor}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-[12.5px] font-semibold text-foreground leading-tight">{card.title}</p>
-                      <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <p className="text-[10.5px] text-muted-foreground leading-snug mt-0.5">{card.desc}</p>
-                  </div>
+          {/* Browser window mockup */}
+          <div className="relative z-[2] glass-card rounded-2xl overflow-hidden">
+            {/* Browser chrome bar */}
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-white/50">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-400/70" />
+                <div className="w-3 h-3 rounded-full bg-amber-400/70" />
+                <div className="w-3 h-3 rounded-full bg-emerald-400/70" />
+              </div>
+              <div className="flex-1 mx-3">
+                <div className="h-7 rounded-lg bg-secondary/60 flex items-center px-3 gap-2 max-w-xs mx-auto">
+                  <svg className="w-3 h-3 text-muted-foreground/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+                  </svg>
+                  <span className="text-[11px] text-muted-foreground/60 font-medium">app.q4queue.com/dashboard</span>
                 </div>
-              </motion.div>
-            </motion.div>
-          ))}
+              </div>
+            </div>
 
-          {/* Curvy bold arrows from phone to feature cards */}
-          <svg
-            className="absolute inset-0 w-full h-full z-[1] pointer-events-none hidden md:block"
-            viewBox="0 0 550 600"
-            preserveAspectRatio="xMidYMid meet"
-            fill="none"
+            {/* Dashboard content */}
+            <div className="p-5 bg-white/30 space-y-4">
+              {/* Dashboard header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-heading font-bold text-foreground">Queue Dashboard</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Downtown Clinic · Today</p>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live
+                </div>
+              </div>
+
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "In Queue", value: "12", color: "text-primary" },
+                  { label: "Avg Wait", value: "8m", color: "text-amber-600" },
+                  { label: "Served Today", value: "47", color: "text-emerald-600" },
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-xl bg-white/60 border border-border/30 p-3 text-center">
+                    <p className={`font-heading text-xl font-extrabold ${stat.color}`}>{stat.value}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Queue list */}
+              <div className="rounded-xl bg-white/60 border border-border/30 overflow-hidden">
+                <div className="flex items-center justify-between px-3.5 py-2 border-b border-border/30">
+                  <p className="text-[11px] font-heading font-semibold text-foreground">Current Queue</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">12 waiting</p>
+                </div>
+                {[
+                  { name: "Sarah M.", position: "#1", status: "Serving", statusBg: "bg-blue-50 text-blue-600", time: "2m ago" },
+                  { name: "James K.", position: "#2", status: "Next", statusBg: "bg-amber-50 text-amber-600", time: "5m ago" },
+                  { name: "Priya R.", position: "#3", status: "Waiting", statusBg: "bg-secondary text-muted-foreground", time: "7m ago" },
+                  { name: "Alex W.", position: "#4", status: "Waiting", statusBg: "bg-secondary text-muted-foreground", time: "9m ago" },
+                ].map((person, i) => (
+                  <motion.div
+                    key={person.name}
+                    className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/20 last:border-b-0 hover:bg-white/40 transition-colors"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.8 + i * 0.1 }}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-[9px] font-bold text-primary shrink-0">
+                        {person.name[0]}
+                      </span>
+                      <div>
+                        <p className="text-[12px] font-semibold text-foreground leading-tight">{person.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{person.time}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-muted-foreground/50">{person.position}</span>
+                      <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${person.statusBg}`}>
+                        {person.status}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Notification toast — top-right */}
+          <motion.div
+            className="absolute -top-3 -right-3 z-[3] hidden lg:block"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
-            <defs>
-              <marker id="arrow" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto">
-                <path d="M0 1 L12 5 L0 9" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.45" strokeLinejoin="round" strokeLinecap="round" />
-              </marker>
-            </defs>
-            <path d="M240 75 C200 35, 140 25, 80 55" stroke="hsl(var(--primary))" strokeOpacity="0.35" strokeWidth="2.5" strokeLinecap="round" markerEnd="url(#arrow)" />
-            <path d="M330 170 C370 135, 420 130, 475 155" stroke="hsl(var(--primary))" strokeOpacity="0.35" strokeWidth="2.5" strokeLinecap="round" markerEnd="url(#arrow)" />
-            <path d="M235 380 C195 355, 140 345, 85 360" stroke="hsl(var(--primary))" strokeOpacity="0.35" strokeWidth="2.5" strokeLinecap="round" markerEnd="url(#arrow)" />
-            <path d="M335 470 C375 445, 420 440, 475 465" stroke="hsl(var(--primary))" strokeOpacity="0.35" strokeWidth="2.5" strokeLinecap="round" markerEnd="url(#arrow)" />
-          </svg>
+            <div className="bg-white rounded-xl border border-border/40 px-4 py-3 shadow-lg shadow-black/5 max-w-[200px]">
+              <div className="flex items-start gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[11px] font-heading font-bold text-foreground leading-tight">Token #47 served</p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">Counter 2 · Just now</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Active users — bottom-left */}
+          <motion.div
+            className="absolute -bottom-5 -left-3 z-[3] hidden lg:block"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="bg-white rounded-full border border-border/40 pl-1.5 pr-4 py-1.5 shadow-lg shadow-black/5 flex items-center gap-2">
+              {/* Avatar stack */}
+              <div className="flex -space-x-2">
+                {["bg-primary", "bg-violet-500", "bg-emerald-500", "bg-amber-500"].map((bg, i) => (
+                  <div key={i} className={`w-7 h-7 rounded-full ${bg} border-2 border-white flex items-center justify-center`}>
+                    <span className="text-[8px] font-bold text-white">{["S", "J", "P", "A"][i]}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <p className="text-[11px] font-heading font-bold text-foreground leading-tight">+8 more</p>
+                <p className="text-[9px] text-muted-foreground">in queue now</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Uptime pill — bottom-right */}
+          <motion.div
+            className="absolute -bottom-3 -right-2 z-[3] hidden lg:block"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 1.2, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="bg-white rounded-full border border-border/40 px-3.5 py-2 shadow-lg shadow-black/5 flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span className="text-[11px] font-heading font-bold text-foreground">99.9% uptime</span>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
 
       {/* Stats bar */}
       <motion.div
-        className="relative max-w-4xl mx-auto mt-16 md:mt-24"
+        className="relative max-w-5xl mx-auto mt-16 md:mt-24"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.5 }}
       >
-        <div className="rounded-2xl bg-white border border-gray-200/60 p-6 md:p-8" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px -4px rgba(0,0,0,0.06)" }}>
-          <div className="grid grid-cols-3 divide-x divide-gray-200/60">
-            {stats.map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center gap-3 px-4">
-                <div className={`w-11 h-11 rounded-xl ${stat.iconBg} flex items-center justify-center`}>
-                  <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+        <div className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 bg-white/60 backdrop-blur-xl border border-white/80 shadow-xl shadow-primary/5">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+          
+          <div className="grid md:grid-cols-3 gap-8 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-border/60">
+            {stats.map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                className="flex items-center gap-5 pt-6 md:pt-0 md:px-8 first:pt-0 first:pl-0 last:pr-0 group cursor-default"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 + i * 0.1 }}
+              >
+                <div className="w-12 h-12 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors duration-300">
+                  <stat.icon className="w-5 h-5 text-primary/70 group-hover:text-primary transition-colors duration-300" />
                 </div>
-                <span className="font-heading text-3xl md:text-4xl font-extrabold text-foreground">{stat.value}</span>
-                <span className="text-sm md:text-base text-muted-foreground">{stat.label}</span>
-              </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-heading text-2xl font-bold tracking-tight text-foreground">{stat.value}</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground font-medium mt-1 block">{stat.label}</span>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>

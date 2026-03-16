@@ -5,6 +5,7 @@ import SuperAdminRoute from "@/components/SuperAdminRoute";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { Logo } from "@/components/ui/Logo";
 
 export default function SuperAdminProtectedLayout({ children }: { children: ReactNode }) {
     const { logout } = useAuth();
@@ -18,7 +19,7 @@ export default function SuperAdminProtectedLayout({ children }: { children: Reac
                     {/* Mobile Header */}
                     <header className="lg:hidden bg-slate-900 border-b border-slate-800 h-16 flex items-center justify-between px-4 sticky top-0 z-20">
                         <Link href="/super-admin" className="flex items-center gap-2">
-                            <img src="/assets/q4queue-logocropp.png" alt="q4queue Logo" className="h-9 w-auto object-contain" />
+                            <Logo size="sm" className="text-white" />
                         </Link>
                         <button
                             onClick={logout}
