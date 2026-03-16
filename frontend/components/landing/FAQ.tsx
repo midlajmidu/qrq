@@ -41,7 +41,7 @@ const FAQ = () => {
       <div className="max-w-2xl mx-auto">
         <AnimatedSection className="text-center mb-12">
           <span className="inline-block text-primary font-semibold text-sm tracking-wide uppercase mb-3 px-3 py-1 rounded-full bg-primary/8 border border-primary/15">FAQ</span>
-          <h2 className="font-heading text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mt-4">
+          <h2 className="font-heading text-4xl md:text-5xl font-extrabold tracking-[-0.02em] text-foreground mt-4">
             Common Questions
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-md mx-auto">
@@ -49,7 +49,7 @@ const FAQ = () => {
           </p>
         </AnimatedSection>
         <AnimatedSection delay={0.1}>
-          <div className="rounded-2xl bg-white border border-gray-200/60 p-6 md:p-8" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 6px 24px -2px rgba(0,0,0,0.05)" }}>
+          <div className="glass-card rounded-2xl p-6 md:p-8">
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, i) => (
                 <AccordionItem key={i} value={`item-${i}`} className="border-gray-200/60">
@@ -72,7 +72,7 @@ const FAQ = () => {
 
         {/* Contact block */}
         <AnimatedSection delay={0.2}>
-          <div className="mt-8 text-center rounded-2xl bg-white border border-gray-200/60 p-6" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 16px -2px rgba(0,0,0,0.04)" }}>
+          <div className="mt-8 text-center glass-card rounded-2xl p-6">
             <p className="text-foreground font-semibold">Still have questions?</p>
             <p className="text-muted-foreground text-sm mt-1">
               We&apos;re here to help. Reach out and we&apos;ll get back to you within 24 hours.

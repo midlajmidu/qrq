@@ -3,6 +3,10 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
+import { Logo } from "@/components/ui/Logo";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
     const { login, isLoading, error } = useAuth();
@@ -21,107 +25,150 @@ export default function LoginPage() {
     }, [login, orgSlug, email, password]);
 
     return (
-        <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50 px-4">
-            <div className="w-full max-w-sm">
-                <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold text-gray-900">Sign in</h1>
-                    <p className="text-sm text-gray-500 mt-1">Enter your credentials to continue</p>
+        <main className="min-h-screen h-screen relative flex flex-col items-center justify-center bg-hero-glow overflow-hidden px-4">
+            {/* Background grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(220_16%_90%/0.5)_1px,transparent_1px),linear-gradient(to_bottom,hsl(220_16%_90%/0.5)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black_70%,transparent_100%)] pointer-events-none" />
+            <div className="absolute top-20 left-[10%] w-72 h-72 bg-primary/8 rounded-full blur-[120px] animate-pulse pointer-events-none" />
+            <div className="absolute bottom-20 right-[10%] w-56 h-56 bg-accent/8 rounded-full blur-[100px] animate-pulse pointer-events-none" />
+
+            {/* Centered login */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full max-w-[420px] relative z-10"
+            >
+                {/* Logo */}
+                <div className="text-center mb-8 flex justify-center">
+                    <Link href="/" className="inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg p-1" aria-label="Go to home page">
+                        <Logo size="lg" />
+                    </Link>
                 </div>
 
-                <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 pb-8 space-y-6" noValidate>
-                    <div className="text-center pt-2 pb-6 border-b border-gray-100">
-                        <Link href="/" className="inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1" aria-label="Go to home page">
-                            <img src="/assets/q4queue-logocropp.png" alt="q4queue Logo" className="h-10 w-auto object-contain" />
-                        </Link>
+                {/* Login card */}
+                <div className="glass-card rounded-2xl p-7 md:p-8 space-y-6" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px -4px rgba(0,0,0,0.06)" }}>
+                    <div className="text-center pb-5 border-b border-border/50">
+                        <h1 className="font-heading text-xl font-bold text-foreground">
+                            Sign in to your <span className="text-gradient">dashboard</span>
+                        </h1>
+                        <p className="text-sm text-muted-foreground mt-1.5">Enter your credentials to continue</p>
                     </div>
 
-                    {error && (
-                        <div role="alert" className="bg-red-50 text-red-700 text-sm font-medium p-3 rounded-lg border border-red-100">
-                            {error}
-                        </div>
-                    )}
+                    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                        <AnimatePresence>
+                            {error && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                                    exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div role="alert" className="bg-destructive/10 text-destructive text-sm font-medium p-3 rounded-lg border border-destructive/20 text-center">
+                                        {error}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                    <div>
-                        <label htmlFor="org-slug" className="block text-sm font-medium text-gray-700 mb-1">Organization Slug</label>
-                        <input
-                            id="org-slug"
-                            type="text"
-                            value={orgSlug}
-                            onChange={(e) => setOrgSlug(e.target.value)}
-                            placeholder="your-org"
-                            required
-                            autoComplete="organization"
-                            className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors"
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                        <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="admin@clinic.com"
-                            required
-                            autoComplete="email"
-                            className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors"
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="password" title="Password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                        <div className="relative">
+                        <div>
+                            <label htmlFor="org-slug" className="block text-sm font-semibold text-foreground mb-1.5">Organization Slug</label>
                             <input
-                                id="password"
-                                type={showPassword ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
+                                id="org-slug"
+                                type="text"
+                                value={orgSlug}
+                                onChange={(e) => setOrgSlug(e.target.value)}
+                                placeholder="your-org"
                                 required
-                                autoComplete="current-password"
-                                className="w-full rounded-lg border border-gray-300 pl-3.5 pr-10 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors"
+                                autoComplete="organization"
+                                className="w-full rounded-xl border border-input bg-white/50 px-4 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-muted-foreground"
                                 disabled={isLoading}
                             />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                                aria-label={showPassword ? "Hide password" : "Show password"}
-                            >
-                                {showPassword ? (
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-                                    </svg>
-                                ) : (
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                )}
-                            </button>
                         </div>
-                    </div>
 
-                    <button
-                        type="submit"
-                        disabled={isLoading || !orgSlug || !email || !password}
-                        aria-label="Sign in"
-                        className="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                    >
-                        {isLoading ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
-                                Signing in...
-                            </span>
-                        ) : (
-                            "Sign in"
-                        )}
-                    </button>
-                </form>
-            </div>
-        </main >
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-1.5">Email Address</label>
+                            <input
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="admin@clinic.com"
+                                required
+                                autoComplete="email"
+                                className="w-full rounded-xl border border-input bg-white/50 px-4 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-muted-foreground"
+                                disabled={isLoading}
+                            />
+                        </div>
+
+                        <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label htmlFor="password" title="Password" className="block text-sm font-semibold text-foreground">Password</label>
+                            </div>
+                            <div className="relative">
+                                <input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                    autoComplete="current-password"
+                                    className="w-full rounded-xl border border-input bg-white/50 pl-4 pr-12 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all placeholder:text-muted-foreground"
+                                    disabled={isLoading}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none p-1.5 rounded-md transition-colors"
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                    disabled={isLoading}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="w-5 h-5" />
+                                    ) : (
+                                        <Eye className="w-5 h-5" />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isLoading || !orgSlug || !email || !password}
+                            aria-label="Sign in"
+                            className="w-full h-11 mt-4 bg-primary text-primary-foreground font-semibold rounded-full shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-70 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Signing in...
+                                </>
+                            ) : (
+                                <>
+                                    Sign in <ArrowRight className="w-4 h-4 ml-1" />
+                                </>
+                            )}
+                        </button>
+                    </form>
+
+                    <div className="pt-5 border-t border-border/50 text-center">
+                        <p className="text-sm text-muted-foreground">
+                            Don&apos;t have an account?{" "}
+                            <Link href="/get-started" className="text-primary hover:text-primary/80 font-semibold ml-1 transition-colors">
+                                Get Started
+                            </Link>
+                        </p>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Minimal footer */}
+            <p className="relative z-10 text-center text-xs text-muted-foreground mt-8">
+                © {new Date().getFullYear()} Q4Queue · <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+            </p>
+        </main>
     );
 }

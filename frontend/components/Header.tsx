@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { Logo } from "@/components/ui/Logo";
 
 export default function Header() {
     const { user, logout } = useAuth();
@@ -24,7 +25,7 @@ export default function Header() {
                     {/* Logo */}
                     <div className="flex items-center gap-6">
                         <Link href={dashBase} className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1 -ml-1" aria-label="q4queue Dashboard">
-                            <img src="/assets/q4queue-logocropp.png" alt="q4queue Logo" className="h-9 w-auto object-contain" />
+                            <Logo size="sm" />
                         </Link>
 
                         {/* Navigation links */}
