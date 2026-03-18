@@ -38,6 +38,8 @@ async def get_overview(
 async def get_history(
     session_id: Optional[uuid.UUID] = Query(None, description="Filter by Session ID"),
     queue_id: Optional[uuid.UUID] = Query(None, description="Filter by Queue ID"),
+    search: Optional[str] = Query(None, description="Search by name, phone, or token number"),
+    status: Optional[str] = Query(None, description="Filter by token status"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -50,6 +52,8 @@ async def get_history(
         org_id=current_user.org_id,
         session_id=session_id,
         queue_id=queue_id,
+        search=search,
+        status=status,
         limit=limit,
         offset=offset,
     )
