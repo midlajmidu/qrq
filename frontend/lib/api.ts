@@ -185,7 +185,7 @@ export const api = {
     },
 
     // ── Analytics ────────────────────────────────────────────────
-    getOverview(sessionId?: string, queueId?: string, recentLimit?: number, recentOffset?: number): Promise<AnalyticsOverview> {
+    getOverview(sessionId?: string, queueId?: string, recentLimit?: number, recentOffset?: number, init?: RequestInit): Promise<AnalyticsOverview> {
         const params = new URLSearchParams();
         if (sessionId) params.append("session_id", sessionId);
         if (queueId) params.append("queue_id", queueId);
@@ -194,7 +194,7 @@ export const api = {
 
         const qs = params.toString();
         const url = qs ? `/analytics/overview?${qs}` : "/analytics/overview";
-        return request<AnalyticsOverview>(url);
+        return request<AnalyticsOverview>(url, init);
     },
 
     getHistory(params: { sessionId?: string; queueId?: string; search?: string; status?: string; limit?: number; offset?: number } = {}): Promise<PaginatedHistoryResponse> {

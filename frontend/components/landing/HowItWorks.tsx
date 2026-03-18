@@ -22,7 +22,7 @@ const steps = [
     number: "02",
     title: "Wait from anywhere",
     description:
-      "No need to stand in line. Visitors track their real-time position from their phone. They can wait in their car, grab a coffee, or browse nearby.",
+      "No need to stand in line. Visitors track their real time position from their phone. They can wait in their car, grab a coffee, or browse nearby.",
     icon: Smartphone,
     iconBg: "bg-amber-500",
     iconShadow: "shadow-xl shadow-amber-500/25",

@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
+import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 
 const navLinks = [
   { href: "/#features", label: "Features", scroll: true },
@@ -22,6 +23,19 @@ const Navbar = () => {
   const [active, setActive] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const { scrollY } = useScroll();
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const previous = scrollY.getPrevious() ?? 0;
+    // Hide navbar if scrolling down and past the threshold
+    if (latest > previous && latest > 150) {
+      setHidden(true);
+      setMobileOpen(false); // Close mobile menu if open when scrolling down
+    } else {
+      setHidden(false);
+    }
+  });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -59,9 +73,15 @@ const Navbar = () => {
   };
 
   return (
-    <nav
+    <motion.nav
+      variants={{
+        visible: { y: 0 },
+        hidden: { y: "-100%" },
+      }}
+      animate={hidden ? "hidden" : "visible"}
+      transition={{ duration: 0.35, ease: "easeInOut" }}
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        "fixed top-0 left-0 right-0 z-50 transition-colors duration-300",
         scrolled
           ? "bg-background/80 backdrop-blur-xl border-b border-border/40 shadow-sm"
           : "bg-transparent"
@@ -162,7 +182,7 @@ const Navbar = () => {
           </Button>
         </div>
       )}
-    </nav>
+    </motion.nav>
   );
 };
 
