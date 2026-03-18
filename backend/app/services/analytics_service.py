@@ -157,15 +157,28 @@ async def get_history_details(
     org_id: uuid.UUID,
     session_id: Optional[uuid.UUID] = None,
     queue_id: Optional[uuid.UUID] = None,
+    search: Optional[str] = None,
+    status: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
 ) -> dict:
     """Fetch detailed token history with pagination and filters."""
     from app.models.queue import Queue
+    from sqlalchemy import or_, cast, String
     
     conditions = [Token.org_id == org_id, Token.status != TokenStatus.deleted]
     if queue_id:
         conditions.append(Token.queue_id == queue_id)
+    if status:
+        conditions.append(Token.status == status)
+    
+    if search:
+        search_term = f"%{search.lower()}%"
+        conditions.append(or_(
+            func.lower(Token.customer_name).like(search_term),
+            Token.customer_phone.like(search_term),
+            cast(Token.token_number, String).like(search_term)
+        ))
     
     join_queue = False
     if session_id:
