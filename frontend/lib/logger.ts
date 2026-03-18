@@ -29,8 +29,13 @@ function pushLog(entry: LogEntry) {
 
     // Only log to console in development
     if (!config.isProduction) {
-        const fn = entry.level === "error" ? console.error : entry.level === "warn" ? console.warn : console.info;
-        fn(`[FC:${entry.level}] ${entry.message}`, entry.context || "");
+        if (entry.level === "error") {
+            console.error(`[FC:${entry.level}] ${entry.message}`, entry.context || "");
+        } else if (entry.level === "warn") {
+            console.warn(`[FC:${entry.level}] ${entry.message}`, entry.context || "");
+        } else {
+            console.info(`[FC:${entry.level}] ${entry.message}`, entry.context || "");
+        }
     }
 }
 
