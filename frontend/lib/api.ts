@@ -109,6 +109,8 @@ async function request<T>(
     try {
         resp = await fetch(url, { ...options, headers });
     } catch (err) {
+        if ((err as Error)?.name === "AbortError") throw err;
+
         // Network failure — server unreachable
         logger.error("Network request failed", { path, error: String(err) });
         throw new ApiError({

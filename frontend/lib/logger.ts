@@ -30,11 +30,14 @@ function pushLog(entry: LogEntry) {
     // Only log to console in development
     if (!config.isProduction) {
         if (entry.level === "error") {
-            console.error(`[FC:${entry.level}] ${entry.message}`, entry.context || "");
+            // eslint-disable-next-line no-console
+            console.error(`[FC:${entry.level}] ${entry.message}`, entry.context);
         } else if (entry.level === "warn") {
-            console.warn(`[FC:${entry.level}] ${entry.message}`, entry.context || "");
+            // eslint-disable-next-line no-console
+            console.warn(`[FC:${entry.level}] ${entry.message}`, entry.context);
         } else {
-            console.info(`[FC:${entry.level}] ${entry.message}`, entry.context || "");
+            // eslint-disable-next-line no-console
+            console.info(`[FC:${entry.level}] ${entry.message}`, entry.context);
         }
     }
 }
