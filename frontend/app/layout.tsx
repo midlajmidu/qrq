@@ -21,11 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} ${dmSans.variable} ${plusJakartaSans.variable}`}>
+      <body className={`${inter.className} ${dmSans.variable} ${plusJakartaSans.variable} flex flex-col`}>
         <ClientProviders>
-          <div className="flex flex-col">
-            {children}
-          </div>
+          {children}
         </ClientProviders>
       </body>
     </html>

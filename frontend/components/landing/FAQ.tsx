@@ -31,7 +31,7 @@ const faqs = [
   {
     question: "How do visitors know when it's their turn?",
     answer:
-      "Visitors see real-time updates on their phone screen and receive notifications when their turn is approaching.",
+      "Visitors see real time updates on their phone screen and receive notifications when their turn is approaching.",
   },
 ];
 
