@@ -10,7 +10,7 @@ const CTA = () => {
   return (
     <section className="py-24 md:py-32 px-6">
       <AnimatedSection className="max-w-4xl mx-auto">
-        <div className="relative rounded-3xl overflow-hidden px-8 py-16 md:px-16 md:py-20 text-center bg-gradient-primary"
+        <div className="relative rounded-3xl overflow-hidden px-8 py-16 md:px-16 md:py-20 text-center bg-gradient-to-br from-primary via-accent to-blue-900"
         >
           {/* Decorative shapes */}
           <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4" />
