@@ -20,8 +20,8 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} ${dmSans.variable} ${plusJakartaSans.variable}`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} ${dmSans.variable} ${plusJakartaSans.variable}`} suppressHydrationWarning>
         <ClientProviders>
           <div className="flex flex-col">
             {children}

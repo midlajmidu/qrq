@@ -13,6 +13,56 @@ import ConfirmModal from "@/components/ConfirmModal";
 import QueueQRCode from "@/components/QueueQRCode";
 import type { RecentToken, WaitingToken, QueueResponse } from "@/types/api";
 
+const C = {
+  pageBg:     "#f7f8fa",
+  cardBg:     "#ffffff",
+  border:     "#e8eaef",
+  borderHov:  "#c4ccd8",
+  borderLight:"#f1f2f5",
+  text:       "#0f1729",
+  textSub:    "#475569",
+  textMuted:  "#8b95a9",
+  brand:      "#4f46e5",
+  brandLight: "#eef2ff",
+  brandBorder:"#c7d2fe",
+  brandGlow:  "rgba(79,70,229,.10)",
+  blue:       "#3b82f6", blueBg: "#eff6ff",   blueBorder: "#bfdbfe",
+  green:      "#10b981", greenBg: "#ecfdf5",   greenBorder:"#a7f3d0",
+  amber:      "#f59e0b", amberBg: "#fffbeb",   amberBorder:"#fde68a",
+  red:        "#ef4444", redBg:   "#fef2f2",   redBorder:  "#fecaca",
+  purple:     "#a855f7", purpleBg:"#faf5ff",  purpleBorder:"#e9d5ff",
+  slate:      "#64748b", slateBg: "#f8fafc",
+};
+
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  .ov { font-family: 'Inter', sans-serif; color: ${C.text}; -webkit-font-smoothing: antialiased; }
+  .card { background: ${C.cardBg}; border: 1px solid ${C.border}; border-radius: 14px; box-shadow: 0 0 0 1px rgba(0,0,0,.02), 0 1px 2px rgba(0,0,0,.03), 0 2px 8px rgba(0,0,0,.025); transition: box-shadow .25s ease, border-color .25s ease; }
+  .card:hover { box-shadow: 0 0 0 1px rgba(0,0,0,.03), 0 4px 12px rgba(0,0,0,.06), 0 8px 28px rgba(0,0,0,.04); border-color: ${C.borderHov}; }
+  
+  .ov-sel { width: 100%; padding: 12px 14px; font-size: 13.5px; color: ${C.text}; background: #ffffff; border: 1px solid ${C.border}; border-radius: 10px; transition: all .2s ease; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
+  .ov-sel:hover:not(:disabled) { border-color: #cbd5e1; background: #f8fafc; box-shadow: 0 2px 4px rgba(0,0,0,.04); }
+  .ov-sel:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,.15), 0 1px 2px rgba(0,0,0,.03); background: #ffffff; }
+  
+  .qa-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; font-size: 13.5px; font-weight: 600; font-family: 'Inter', sans-serif; color: #ffffff; background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%); border: 1px solid transparent; border-radius: 10px; cursor: pointer; text-decoration: none; box-shadow: 0 1px 3px rgba(37,99,235,0.2), 0 1px 2px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,0.1); transition: all .22s ease; }
+  .qa-btn:hover:not(:disabled) { background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%); transform: translateY(-0.5px); box-shadow: 0 4px 6px rgba(37,99,235,0.3); }
+  .qa-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .qa-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; font-size: 13.5px; font-weight: 600; font-family: 'Inter', sans-serif; color: ${C.text}; background: #ffffff; border: 1px solid ${C.border}; border-radius: 10px; cursor: pointer; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: all .22s ease; }
+  .qa-btn-outline:hover:not(:disabled) { border-color: ${C.borderHov}; background: ${C.slateBg}; box-shadow: 0 2px 4px rgba(0,0,0,.06); }
+  .qa-btn-outline:disabled { opacity: .4; cursor: not-allowed; }
+
+  .qtable { width: 100%; border-collapse: collapse; text-align: left; }
+  .qtable th { padding: 12px 16px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: ${C.textMuted}; border-bottom: 1px solid ${C.border}; background: linear-gradient(180deg, #ffffff, ${C.slateBg}); font-family: 'Inter', sans-serif; }
+  .qtable td { padding: 14px 16px; font-size: 13.5px; font-weight: 500; color: ${C.text}; border-bottom: 1px solid ${C.borderLight}; transition: background .12s ease; }
+  .qtable tbody tr:hover td { background: #f8f9ff; }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: ${C.textMuted}; font-family: 'Inter', sans-serif; display: block; margin-bottom: 8px; }
+`;
+
 interface PageProps {
     params: Promise<{ queueId: string }>;
 }
@@ -85,20 +135,17 @@ export default function QueueDetailPage({ params }: PageProps) {
 
     const [initialQueue, setInitialQueue] = useState<QueueResponse | null>(null);
 
-    // Debounce ref to prevent double-click spam
     const lastActionRef = useRef(0);
     const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Initial fetch for queue details (REST backup for WS)
     useEffect(() => {
         api.getQueue(queueId)
             .then(setInitialQueue)
-            .catch(() => { /* ignore, WS snapshot is primary */ });
+            .catch(() => {});
     }, [queueId]);
 
-    const isDisabled = actionLoading !== null; // Don't block on socket status for manual entry
+    const isDisabled = actionLoading !== null;
 
-    // Auto-clear error after 5s
     const setErrorWithTimer = useCallback((msg: string) => {
         setActionError(msg);
         if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
@@ -234,7 +281,7 @@ export default function QueueDetailPage({ params }: PageProps) {
             setInviteNumber("");
         } catch (err: unknown) {
             if (err instanceof ApiError) setActionError(err.detail);
-            else setActionError("Failed to invite token: it might not be waiting or doesn't exist.");
+            else setActionError("Failed to invite token: it might not exist.");
         } finally {
             setActionLoading(null);
         }
@@ -247,13 +294,13 @@ export default function QueueDetailPage({ params }: PageProps) {
         const num = parseInt(removeNumber, 10);
         if (isNaN(num)) return;
 
-        const token = state?.waiting_tokens?.find((t) => t.token_number === num);
-        if (!token) {
+        const t = state?.waiting_tokens?.find((tk) => tk.token_number === num);
+        if (!t) {
             setActionError(`Token ${state?.prefix || ""}${num} is not currently waiting.`);
             return;
         }
 
-        setTokenToRemove({ id: token.id, number: token.token_number });
+        setTokenToRemove({ id: t.id, number: t.token_number });
         setRemoveNumber("");
     }, [removeNumber, state?.waiting_tokens, state?.prefix]);
 
@@ -273,7 +320,6 @@ export default function QueueDetailPage({ params }: PageProps) {
         }
     }, [tokenToRemove, state?.prefix, toast]);
 
-    // ── Announcement ───────────────────────────────────────────────
     useEffect(() => {
         if (!isEditingAnnouncement) {
             setAnnouncementInput(state?.announcement ?? initialQueue?.announcement ?? "");
@@ -296,560 +342,342 @@ export default function QueueDetailPage({ params }: PageProps) {
         }
     }, [queueId, announcementInput, toast]);
 
-    // ── Keyboard shortcuts ─────────────────────────────────────────
     useEffect(() => {
         function onKeyDown(e: KeyboardEvent) {
-            // Don't trigger if typing in an input, textarea, or modal open
             const target = e.target as HTMLElement;
             if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
             if (showSkipConfirm) return;
-
             if (e.key === "Enter" && !isDisabled) {
-                e.preventDefault();
-                handleNext();
+                e.preventDefault(); handleNext();
             }
             if ((e.key === "s" || e.key === "S") && !isDisabled) {
-                e.preventDefault();
-                handleSkip();
+                e.preventDefault(); handleSkip();
             }
         }
-
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [isDisabled, handleNext, handleSkip, showSkipConfirm, state?.current_serving]);
 
-    // ── Cleanup timers on unmount ──────────────────────────────────
     useEffect(() => {
-        return () => {
-            if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-        };
+        return () => { if (errorTimerRef.current) clearTimeout(errorTimerRef.current); };
     }, []);
 
     return (
-        <div className="space-y-6">
-            {/* Breadcrumb + Status */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex items-center gap-3">
-                    <Link
-                        href={`${dashBase}/queues`}
-                        aria-label="Back to queues"
-                        className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md p-1"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </Link>
-                    <div className="min-w-0 pr-2">
-                        <h1 className="text-2xl font-bold text-gray-900 break-words mb-1">
-                            {state?.queue_name || initialQueue?.name || "Loading..."}
-                        </h1>
-                        <p className="text-sm text-gray-500 break-words">
-                            Prefix: <span className="font-mono font-semibold">{state?.prefix || initialQueue?.prefix || "—"}</span>
-                            {" · "}
-                            {(state?.is_active ?? initialQueue?.is_active) ? (
-                                <span className="text-emerald-600 font-medium whitespace-nowrap">Active</span>
-                            ) : (
-                                <span className="text-red-500 font-medium whitespace-nowrap">Inactive</span>
-                            )}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3 flex-wrap">
-                    <ConnectionBadge status={status} />
-
-                    {!isStaff && (
-                        <button
-                            onClick={() => setShowResetConfirm(true)}
-                            disabled={isDisabled || resetting}
-                            className="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100 flex items-center gap-1 shadow-sm"
-                            aria-label="Reset Queue"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Reset
-                        </button>
-                    )}
-
-                    {!isStaff && (
-                        <button
-                            onClick={() => setShowDeleteConfirm(true)}
-                            className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-100 flex items-center gap-1"
-                            aria-label="Delete Queue"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Delete
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Main Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left column: Now Serving + Actions */}
-                <div className="lg:col-span-2 space-y-5">
-                    {/* Big serving indicator */}
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center min-h-[260px] flex flex-col items-center justify-center">
-                        <p className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                            Now Serving
-                        </p>
-                        <div className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-blue-600 tabular-nums tracking-tight leading-none py-4 break-words px-2 w-full max-w-full" aria-live="polite" aria-atomic="true">
-                            {state?.prefix || ""}{state?.current_serving || 0}
-                        </div>
-
-                        {state?.serving_details && (
-                            <div className="mt-2 text-center animate-in fade-in slide-in-from-bottom-2 duration-500 w-full px-2">
-                                <p className="text-2xl font-bold text-gray-900 break-words">{state.serving_details.customer_name}</p>
-                                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-1 text-sm text-gray-500 font-medium">
-                                    {state.serving_details.customer_age != null && (
-                                        <span>Age: {state.serving_details.customer_age}</span>
-                                    )}
-                                    {state.serving_details.customer_age != null && <span className="hidden sm:inline">•</span>}
-                                    <span className="break-all">{state.serving_details.customer_phone}</span>
+        <>
+            <style>{STYLES}</style>
+            <div className="ov min-h-screen">
+                <main style={{ paddingBottom: 64 }}>
+                    
+                    {/* Header Controls */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <Link
+                                    href={`${dashBase}/queues`}
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.borderLight}`, background: C.cardBg, color: C.textSub, transition: 'all .2s ease' }}
+                                    className="hover:border-[#c4ccd8] hover:bg-[#f8fafc] hover:text-[#0f1729]"
+                                >
+                                    <svg width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                                </Link>
+                                <div>
+                                    <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 4px 0', letterSpacing: '-.02em', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        {state?.queue_name || initialQueue?.name || "Loading..."}
+                                        <ConnectionBadge status={status} />
+                                    </h1>
+                                    <p style={{ margin: 0, fontSize: 13, color: C.textSub, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        Prefix: <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: C.text }}>{state?.prefix || initialQueue?.prefix || "—"}</span>
+                                        <span style={{ color: C.borderHov }}>•</span>
+                                        {(state?.is_active ?? initialQueue?.is_active) ? (
+                                            <span style={{ color: C.green, fontWeight: 700 }}>Active Platform</span>
+                                        ) : (
+                                            <span style={{ color: C.red, fontWeight: 700 }}>Inactive State</span>
+                                        )}
+                                    </p>
                                 </div>
                             </div>
-                        )}
 
-                        <div className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-500">
-                            <span>Waiting: <strong className="text-gray-900">{state?.waiting_count ?? 0}</strong></span>
-                            <span className="text-gray-300" aria-hidden="true">|</span>
-                            <span>Issued: <strong className="text-gray-900">{state?.total_issued ?? 0}</strong></span>
-                        </div>
-                    </div>
-
-                    {/* Action buttons — visual hierarchy: Next is primary */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" role="toolbar" aria-label="Queue actions">
-                        <button
-                            onClick={handleNext}
-                            disabled={isDisabled}
-                            aria-label="Call next token (keyboard shortcut: Enter)"
-                            className="py-4 px-6 bg-blue-600 text-white font-bold text-lg rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-all shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-600 disabled:hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                        >
-                            {actionLoading === "next" ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
-                                    Calling...
-                                </span>
-                            ) : (
-                                <>Call Next <span className="hidden sm:inline text-blue-300 text-sm font-normal ml-1">(Enter)</span></>
-                            )}
-                        </button>
-
-                        <button
-                            onClick={handleSkip}
-                            disabled={isDisabled}
-                            aria-label="Skip current token (keyboard shortcut: S)"
-                            className="py-4 px-6 bg-white text-amber-700 font-bold text-lg rounded-xl border border-amber-200 hover:bg-amber-50 active:bg-amber-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
-                        >
-                            {actionLoading === "skip" ? "Skipping..." : <>Skip <span className="hidden sm:inline text-amber-400 text-sm font-normal ml-1">(S)</span></>}
-                        </button>
-
-                        <button
-                            onClick={() => performAction("done", async () => {
-                                const res = await api.callNext(queueId, "done");
-                                if ("message" in res) toast(res.message, "info");
-                                else toast(`${state?.prefix || ""}${res.serving} is now serving`, "success");
-                            })}
-                            disabled={isDisabled}
-                            aria-label="Mark done and call next token"
-                            className="py-4 px-6 bg-white text-emerald-700 font-bold text-lg rounded-xl border border-emerald-200 hover:bg-emerald-50 active:bg-emerald-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-                        >
-                            {actionLoading === "done" ? "Completing..." : "Done & Next"}
-                        </button>
-                    </div>
-
-                    {/* Extended Manual Controls */}
-                    <div className="flex flex-col md:flex-row gap-6 border-t border-gray-100 pt-6">
-                        <div className="flex-1 space-y-2">
-                            <p className="text-sm font-semibold text-gray-500 uppercase tracking-widest">Manual Entry</p>
-                            {!showAddForm ? (
-                                <button
-                                    onClick={() => setShowAddForm(true)}
-                                    disabled={isDisabled}
-                                    className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Add Customer
-                                </button>
-                            ) : (
-                                <div className="space-y-2">
-                                    <input type="text" value={addName} onChange={e => setAddName(e.target.value)} placeholder="Full Name *" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                    <input type="tel" value={addPhone} onChange={e => setAddPhone(e.target.value)} placeholder="Phone *" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                    <input type="number" value={addAge} onChange={e => setAddAge(e.target.value)} placeholder="Age (optional)" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                    <div className="flex gap-2">
-                                        <button onClick={handleAddCustomer} disabled={!addName.trim() || !addPhone.trim() || actionLoading === "add" || isDisabled} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm disabled:opacity-50 hover:bg-blue-700 transition-colors">
-                                            {actionLoading === "add" ? "Adding..." : "Confirm"}
-                                        </button>
-                                        <button onClick={() => { setShowAddForm(false); setAddName(""); setAddPhone(""); setAddAge(""); }} className="flex-1 py-2 bg-gray-50 border border-gray-200 text-gray-600 font-semibold rounded-lg text-sm hover:bg-gray-100 transition-colors">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex-1 space-y-2">
-                            <p className="text-sm font-semibold text-gray-500 uppercase tracking-widest">Invite by Number</p>
-                            <form onSubmit={handleInvite} className="flex gap-2">
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={inviteNumber}
-                                    onChange={(e) => setInviteNumber(e.target.value)}
-                                    placeholder="Token #"
-                                    disabled={isDisabled || actionLoading === "invite"}
-                                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={!inviteNumber || isDisabled || actionLoading === "invite"}
-                                    className="px-6 py-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Call
-                                </button>
-                            </form>
-                        </div>
-                        <div className="flex-1 space-y-2">
-                            <p className="text-sm font-semibold text-gray-500 uppercase tracking-widest">Remove by Number</p>
-                            <form onSubmit={handleRemoveByNumber} className="flex gap-2">
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={removeNumber}
-                                    onChange={(e) => setRemoveNumber(e.target.value)}
-                                    placeholder="Token #"
-                                    disabled={isDisabled || actionLoading === "remove"}
-                                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={!removeNumber || isDisabled || actionLoading === "remove"}
-                                    className="px-6 py-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Remove
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    {/* Announcement Control */}
-                    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-3">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-widest">Public Announcement</h3>
-                            {(state?.announcement || initialQueue?.announcement) && !isEditingAnnouncement && (
-                                <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Active</span>
-                            )}
-                        </div>
-
-                        {isEditingAnnouncement ? (
-                            <form onSubmit={handleUpdateAnnouncement} className="space-y-3">
-                                <textarea
-                                    value={announcementInput}
-                                    onChange={(e) => setAnnouncementInput(e.target.value)}
-                                    placeholder="Enter a message to display to all customers waiting..."
-                                    disabled={isDisabled || actionLoading === "announcement"}
-                                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
-                                />
-                                <div className="flex gap-2">
-                                    <button
-                                        type="submit"
-                                        disabled={isDisabled || actionLoading === "announcement"}
-                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                {!isStaff && (
+                                    <button 
+                                        onClick={() => setShowResetConfirm(true)} 
+                                        disabled={isDisabled || resetting} 
+                                        className="qa-btn-outline" 
+                                        style={{ padding: '8px 16px', fontSize: 12.5 }}
                                     >
-                                        {actionLoading === "announcement" ? "Saving..." : "Save"}
+                                        <span style={{ color: C.amber, display: 'flex' }}><svg width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></span>
+                                        Force Reset
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsEditingAnnouncement(false)}
-                                        disabled={isDisabled || actionLoading === "announcement"}
-                                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors disabled:opacity-50"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div>
-                                {(state?.announcement ?? initialQueue?.announcement) ? (
-                                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-gray-800 text-sm whitespace-pre-wrap mb-3">
-                                        {state?.announcement ?? initialQueue?.announcement}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-gray-400 italic mb-3">No active announcement.</p>
                                 )}
-                                <button
-                                    onClick={() => setIsEditingAnnouncement(true)}
-                                    disabled={isDisabled}
-                                    className="px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
-                                >
-                                    {(state?.announcement ?? initialQueue?.announcement) ? "Edit Announcement" : "Set Announcement"}
-                                </button>
+                                {!isStaff && (
+                                    <button 
+                                        onClick={() => setShowDeleteConfirm(true)} 
+                                        className="qa-btn" 
+                                        style={{ background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 100%)', boxShadow: '0 1px 3px rgba(220,38,38,0.2), inset 0 1px 0 rgba(255,255,255,0.1)', padding: '8px 16px', fontSize: 12.5 }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'linear-gradient(180deg, #dc2626 0%, #b91c1c 100%)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'linear-gradient(180deg, #ef4444 0%, #dc2626 100%)'; }}
+                                    >
+                                        Drop Queue
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Top Banner Alert System */}
+                        {actionError && (
+                            <div style={{ padding: '14px 16px', background: C.redBg, border: `1px solid ${C.redBorder}`, borderRadius: 10, color: C.red, fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, animation: 'fadeIn .2s ease' }}>
+                                <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                {actionError}
+                            </div>
+                        )}
+                        {status === "disconnected" && (
+                            <div style={{ padding: '14px 16px', background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 10, color: '#b45309', fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                Connection lost. Retrying synchronization frames.
+                            </div>
+                        )}
+                        {status === "reconnecting" && (
+                            <div style={{ padding: '14px 16px', background: C.blueBg, border: `1px solid ${C.blueBorder}`, borderRadius: 10, color: C.blue, fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span className="animate-spin" style={{ width: 14, height: 14, border: '2px solid transparent', borderTopColor: C.blue, borderRadius: '50%' }} />
+                                Rebinding WebSocket streams...
                             </div>
                         )}
                     </div>
 
-                    {/* Error banner */}
-                    {actionError && (
-                        <div role="alert" className="bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 text-sm font-medium">
-                            {actionError}
-                        </div>
-                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(280px, 1fr)', gap: 32, marginTop: 32 }}>
+                        
+                        {/* Major Console (Left Column) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                            
+                            {/* The Stage */}
+                            <div className="card" style={{ padding: 40, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+                                <div style={{ position: 'absolute', top: -50, left: '50%', transform: 'translateX(-50%)', width: 400, height: 200, background: `radial-gradient(circle, ${C.brandLight} 0%, rgba(255,255,255,0) 70%)`, pointerEvents: 'none' }} />
+                                
+                                <span className="lbl" style={{ marginBottom: 16 }}>Currently Serving</span>
+                                <div className="tnum" style={{ fontSize: '110px', fontWeight: 900, color: C.brand, letterSpacing: '-0.04em', lineHeight: 1, padding: '24px 0', textShadow: `0 8px 32px ${C.brandGlow}` }}>
+                                    {state?.prefix || ""}{state?.current_serving || 0}
+                                </div>
 
-                    {/* Disconnected warning */}
-                    {status === "disconnected" && (
-                        <div role="alert" className="bg-amber-50 text-amber-800 px-4 py-3 rounded-lg border border-amber-200 text-sm">
-                            <strong>Connection lost.</strong> Retrying connection to live updates. Manual actions are still available.
-                        </div>
-                    )}
-
-                    {status === "reconnecting" && (
-                        <div role="status" className="bg-blue-50 text-blue-700 px-4 py-3 rounded-lg border border-blue-200 text-sm flex items-center gap-2">
-                            <span className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" aria-hidden="true" />
-                            Reconnecting to live updates...
-                        </div>
-                    )}
-                </div>
-
-                {/* Right column: QR Code, Waiting List & Recent Tokens */}
-                <div className="space-y-6">
-                    {/* QR Code */}
-                    {!isStaff && (
-                        <QueueQRCode
-                            queueId={queueId}
-                            queueName={state?.queue_name || "Queue"}
-                            isCollapsible={true}
-                        />
-                    )}
-
-                    {/* Waiting List */}
-                    <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" aria-label="Waiting list">
-                        <div className="px-5 py-4 border-b border-gray-100 flex flex-col gap-3">
-                            <div className="flex justify-between items-center">
-                                <h2 className="font-semibold text-gray-900 text-sm">Waiting List</h2>
-                                <span className="text-xs bg-indigo-50 text-indigo-700 font-medium px-2 py-1 rounded-full">{state?.waiting_count ?? 0}</span>
-                            </div>
-                            <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                </span>
-                                <input
-                                    type="text"
-                                    placeholder="Search token..."
-                                    value={waitingSearch}
-                                    onChange={(e) => setWaitingSearch(e.target.value)}
-                                    className="w-full text-sm pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex-1 overflow-y-auto max-h-[320px] divide-y divide-gray-50">
-                            {paginatedWaiting.length > 0 ? (
-                                paginatedWaiting.map((t: WaitingToken) => (
-                                    <div key={t.id} className="px-5 py-3 group hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-lg font-bold text-gray-900 tabular-nums w-14">
-                                                    {state?.prefix || ""}{t.token_number}
-                                                </span>
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700">
-                                                    Waiting
-                                                </span>
-                                            </div>
-                                            <button
-                                                onClick={() => setTokenToRemove({ id: t.id, number: t.token_number })}
-                                                className="opacity-0 group-hover:opacity-100 text-xs font-semibold px-2 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded transition-all focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                                                aria-label={`Remove token ${t.token_number}`}
-                                            >
-                                                Remove
-                                            </button>
+                                {state?.serving_details && (
+                                    <div style={{ animation: 'fadeIn .4s ease', marginTop: 16 }}>
+                                        <p style={{ fontSize: 28, fontWeight: 800, color: C.text, margin: '0 0 8px 0', letterSpacing: '-0.02em' }}>{state.serving_details.customer_name}</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: 14, color: C.textSub, fontWeight: 500 }}>
+                                            {state.serving_details.customer_age != null && <span>Age: {state.serving_details.customer_age}</span>}
+                                            {state.serving_details.customer_age != null && <span style={{ color: C.borderHov }}>•</span>}
+                                            <span style={{ fontFamily: "'JetBrains Mono', monospace", color: C.text }}>{state.serving_details.customer_phone}</span>
                                         </div>
-                                        {/* Customer info row */}
-                                        {t.customer_name && (
-                                            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 pl-[68px]">
-                                                <span className="font-medium text-gray-700">{t.customer_name}</span>
-                                                {t.customer_age != null && <span>Age: {t.customer_age}</span>}
-                                                <span>{t.customer_phone}</span>
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 16, marginTop: 40, padding: '10px 24px', background: C.slateBg, borderRadius: 99, border: `1px solid ${C.borderLight}`, fontSize: 13, fontWeight: 600 }}>
+                                    <span style={{ color: C.textSub }}>Waiting <span style={{ color: C.text, marginLeft: 4 }}>{state?.waiting_count ?? 0}</span></span>
+                                    <span style={{ color: C.borderHov }}>|</span>
+                                    <span style={{ color: C.textSub }}>Issued <span style={{ color: C.text, marginLeft: 4 }}>{state?.total_issued ?? 0}</span></span>
+                                </div>
+                            </div>
+
+                            {/* Core Action Triggers */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)', gap: 16 }}>
+                                <button className="qa-btn" onClick={handleNext} disabled={isDisabled} style={{ padding: '24px 16px', flexDirection: 'column', gap: 6, fontSize: 15, height: '100%' }}>
+                                    {actionLoading === "next" ? (
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span className="animate-spin" style={{ width: 16, height: 16, border: '2px solid transparent', borderTopColor: '#fff', borderRadius: '50%' }} /> Executing</span>
+                                    ) : (
+                                        <>Call Next <span style={{ fontSize: 11, color: '#93c5fd', fontWeight: 500 }}>(Enter)</span></>
+                                    )}
+                                </button>
+                                
+                                <button className="qa-btn-outline" onClick={handleSkip} disabled={isDisabled} style={{ padding: '24px 16px', flexDirection: 'column', gap: 6, fontSize: 15, height: '100%', borderColor: C.amberBorder, color: '#b45309', background: C.amberBg }}>
+                                    {actionLoading === "skip" ? "Skipping..." : <>Skip Token <span style={{ fontSize: 11, opacity: 0.6, fontWeight: 500 }}>(S)</span></>}
+                                </button>
+
+                                <button className="qa-btn-outline" onClick={() => performAction("done", async () => { const res = await api.callNext(queueId, "done"); if ("message" in res) toast(res.message, "info"); else toast(`${state?.prefix || ""}${res.serving} is serving`, "success"); })} disabled={isDisabled} style={{ padding: '24px 16px', flexDirection: 'column', gap: 6, fontSize: 15, height: '100%', borderColor: C.greenBorder, color: '#047857', background: C.greenBg }}>
+                                    {actionLoading === "done" ? "Completing..." : "Done & Next"}
+                                </button>
+                            </div>
+
+                            {/* Tactical Overrides */}
+                            <div className="card" style={{ padding: 24 }}>
+                                <span className="lbl" style={{ marginBottom: 20 }}>Tactical Overrides</span>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24 }}>
+                                    
+                                    {/* Manual Injection */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>Admin Injection (Walk-in)</span>
+                                        {!showAddForm ? (
+                                            <button onClick={() => setShowAddForm(true)} disabled={isDisabled} className="qa-btn-outline" style={{ padding: '8px 16px', fontSize: 12.5, width: '100%' }}>
+                                                Inject Customer
+                                            </button>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                <input type="text" value={addName} onChange={e => setAddName(e.target.value)} placeholder="Full Name" className="ov-sel" style={{ padding: '8px 12px', fontSize: 12.5 }} />
+                                                <input type="tel" value={addPhone} onChange={e => setAddPhone(e.target.value)} placeholder="Phone" className="ov-sel" style={{ padding: '8px 12px', fontSize: 12.5 }} />
+                                                <input type="number" value={addAge} onChange={e => setAddAge(e.target.value)} placeholder="Age" className="ov-sel" style={{ padding: '8px 12px', fontSize: 12.5 }} />
+                                                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                                                    <button onClick={handleAddCustomer} disabled={!addName.trim() || !addPhone.trim() || actionLoading === "add" || isDisabled} className="qa-btn" style={{ padding: '6px 0', fontSize: 12, flex: 1 }}>{actionLoading === "add" ? "..." : "Push"}</button>
+                                                    <button onClick={() => { setShowAddForm(false); setAddName(""); setAddPhone(""); setAddAge(""); }} className="qa-btn-outline" style={{ padding: '6px 0', fontSize: 12, flex: 1 }}>Abort</button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
-                                ))
-                            ) : (
-                                <div className="px-5 py-10 text-center text-sm text-gray-400 flex flex-col items-center">
-                                    <svg className="w-8 h-8 text-gray-200 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    {waitingSearch ? "No tokens match your search" : "No one is waiting"}
-                                </div>
-                            )}
-                        </div>
-                        {/* Pagination */}
-                        {filteredWaiting.length > PAGE_SIZE && (
-                            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-xs text-gray-500">
-                                <span>Showing {paginatedWaiting.length} of {filteredWaiting.length}</span>
-                                <div className="flex gap-1">
-                                    <button
-                                        onClick={() => setWaitingPage(p => Math.max(1, p - 1))}
-                                        disabled={waitingPage === 1}
-                                        className="px-2 py-1 rounded bg-white border border-gray-200 disabled:opacity-50 hover:bg-gray-100"
-                                    >
-                                        Prev
-                                    </button>
-                                    <button
-                                        onClick={() => setWaitingPage(p => p + 1)}
-                                        disabled={waitingPage * PAGE_SIZE >= filteredWaiting.length}
-                                        className="px-2 py-1 rounded bg-white border border-gray-200 disabled:opacity-50 hover:bg-gray-100"
-                                    >
-                                        Next
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </aside>
 
-                    {/* Recent Activity */}
-                    <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col" aria-label="Recent activity">
-                        <div className="px-5 py-4 border-b border-gray-100 flex flex-col gap-3">
-                            <h2 className="font-semibold text-gray-900 text-sm">Recent Activity</h2>
-                            <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                </span>
-                                <input
-                                    type="text"
-                                    placeholder="Search recent..."
-                                    value={recentSearch}
-                                    onChange={(e) => setRecentSearch(e.target.value)}
-                                    className="w-full text-sm pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                />
+                                    {/* Force Call */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>Force Execute Call</span>
+                                        <form onSubmit={handleInvite} style={{ display: 'flex', gap: 8 }}>
+                                            <input type="number" min="1" value={inviteNumber} onChange={e => setInviteNumber(e.target.value)} placeholder="Token ID" disabled={isDisabled || actionLoading === "invite"} className="ov-sel" style={{ padding: '8px 12px', fontSize: 12.5 }} />
+                                            <button type="submit" disabled={!inviteNumber || isDisabled || actionLoading === "invite"} className="qa-btn" style={{ padding: '8px 16px', fontSize: 12.5 }}>Call</button>
+                                        </form>
+                                    </div>
+
+                                    {/* Force Purge */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>Purge Token from Array</span>
+                                        <form onSubmit={handleRemoveByNumber} style={{ display: 'flex', gap: 8 }}>
+                                            <input type="number" min="1" value={removeNumber} onChange={e => setRemoveNumber(e.target.value)} placeholder="Token ID" disabled={isDisabled || actionLoading === "remove"} className="ov-sel" style={{ padding: '8px 12px', fontSize: 12.5 }} />
+                                            <button type="submit" disabled={!removeNumber || isDisabled || actionLoading === "remove"} className="qa-btn-outline" style={{ padding: '8px 16px', fontSize: 12.5, borderColor: C.redBorder, color: '#dc2626', background: C.redBg }}>Drop</button>
+                                        </form>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {/* Master Public Announcement broadcast */}
+                            <div className="card" style={{ padding: 24 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                                    <span className="lbl" style={{ margin: 0 }}>Public Announcement Board (Displays on screens)</span>
+                                    {(state?.announcement || initialQueue?.announcement) && !isEditingAnnouncement && (
+                                        <span className="pill" style={{ background: C.greenBg, color: C.green }}>Transmitting</span>
+                                    )}
+                                </div>
+                                {isEditingAnnouncement ? (
+                                    <form onSubmit={handleUpdateAnnouncement} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        <textarea value={announcementInput} onChange={e => setAnnouncementInput(e.target.value)} placeholder="Broadcast delay or info..." disabled={isDisabled || actionLoading === "announcement"} className="ov-sel" style={{ minHeight: 80, resize: 'none' }} />
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                            <button type="submit" disabled={isDisabled || actionLoading === "announcement"} className="qa-btn" style={{ fontSize: 12.5, padding: '8px 24px' }}>Commit Broadcast</button>
+                                            <button type="button" onClick={() => setIsEditingAnnouncement(false)} disabled={isDisabled || actionLoading === "announcement"} className="qa-btn-outline" style={{ fontSize: 12.5, padding: '8px 24px' }}>Cancel</button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    <div>
+                                        {(state?.announcement ?? initialQueue?.announcement) ? (
+                                            <div style={{ padding: 16, background: C.slateBg, borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 14, color: C.textSub, whiteSpace: 'pre-wrap', lineHeight: 1.6, marginBottom: 12 }}>
+                                                {state?.announcement ?? initialQueue?.announcement}
+                                            </div>
+                                        ) : (
+                                            <p style={{ fontSize: 13, color: C.textSub, opacity: 0.6, margin: '0 0 16px 0', fontStyle: 'italic' }}>No active network broadcast.</p>
+                                        )}
+                                        <button onClick={() => setIsEditingAnnouncement(true)} disabled={isDisabled} className="qa-btn-outline" style={{ padding: '8px 16px', fontSize: 12.5 }}>
+                                            {(state?.announcement ?? initialQueue?.announcement) ? "Update Transmission" : "Draft Broadcast"}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto max-h-[250px] divide-y divide-gray-50">
-                            {paginatedRecent.length > 0 ? (
-                                paginatedRecent.map((t: RecentToken, i: number) => (
-                                    <RecentTokenRow key={`${t.token_number}-${i}`} token={t} prefix={state?.prefix || ""} />
-                                ))
-                            ) : (
-                                <div className="px-5 py-10 text-center text-sm text-gray-400 flex flex-col items-center">
-                                    <svg className="w-8 h-8 text-gray-200 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                    {recentSearch ? "No tokens match your search" : "No recent activity"}
-                                </div>
+
+                        {/* List Column (Right) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                            {!isStaff && (
+                                <QueueQRCode queueId={queueId} queueName={state?.queue_name || "Queue"} isCollapsible={true} />
                             )}
-                        </div>
-                        {/* Pagination */}
-                        {filteredRecent.length > PAGE_SIZE && (
-                            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-xs text-gray-500">
-                                <span>Showing {paginatedRecent.length} of {filteredRecent.length}</span>
-                                <div className="flex gap-1">
-                                    <button
-                                        onClick={() => setRecentPage(p => Math.max(1, p - 1))}
-                                        disabled={recentPage === 1}
-                                        className="px-2 py-1 rounded bg-white border border-gray-200 disabled:opacity-50 hover:bg-gray-100"
-                                    >
-                                        Prev
-                                    </button>
-                                    <button
-                                        onClick={() => setRecentPage(p => p + 1)}
-                                        disabled={recentPage * PAGE_SIZE >= filteredRecent.length}
-                                        className="px-2 py-1 rounded bg-white border border-gray-200 disabled:opacity-50 hover:bg-gray-100"
-                                    >
-                                        Next
-                                    </button>
+
+                            {/* Waiting Array */}
+                            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.borderLight}` }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                                        <span className="lbl" style={{ margin: 0, color: C.text }}>Waiting Array</span>
+                                        <span className="pill" style={{ background: C.brandLight, color: C.brand }}>{state?.waiting_count ?? 0} Listed</span>
+                                    </div>
+                                    <input type="text" placeholder="Search array matrix..." value={waitingSearch} onChange={e => setWaitingSearch(e.target.value)} className="ov-sel" style={{ padding: '8px 12px', fontSize: 12.5 }} />
+                                </div>
+                                <div style={{ overflowY: 'auto', maxHeight: 380 }}>
+                                    {paginatedWaiting.length > 0 ? (
+                                        <table className="qtable">
+                                            <tbody>
+                                                {paginatedWaiting.map(t => (
+                                                    <tr key={t.id} className="group">
+                                                        <td style={{ padding: '12px 24px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                    <div className="tnum" style={{ fontSize: 16, fontWeight: 800, color: C.text, width: 44 }}>{state?.prefix || ""}{t.token_number}</div>
+                                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                        <span style={{ fontSize: 13.5, fontWeight: 600, color: C.text }}>{t.customer_name || "Anonymous"}</span>
+                                                                        <span style={{ fontSize: 11, fontWeight: 500, color: C.textSub, fontFamily: "'JetBrains Mono', monospace" }}>{t.customer_phone || "No Relay"}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <button onClick={() => setTokenToRemove({ id: t.id, number: t.token_number })} className="qa-btn" style={{ padding: '4px 8px', fontSize: 10, background: C.redBg, color: C.red, boxShadow: 'none', opacity: 0, pointerEvents: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.background = C.redBorder; }} onMouseLeave={(e) => { e.currentTarget.style.background = C.redBg; }} aria-label="Drop" title="Drop token">Drop</button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <div style={{ padding: 48, textAlign: 'center' }}>
+                                            <p style={{ fontSize: 13.5, color: C.textMuted, fontWeight: 500, margin: 0 }}>Array empty. Zero entities waiting.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        )}
-                    </aside>
-                </div>
+
+                            {/* History Archive */}
+                            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.borderLight}` }}>
+                                    <span className="lbl" style={{ margin: '0 0 16px 0', color: C.text }}>Terminal Archive</span>
+                                    <input type="text" placeholder="Search historical logs..." value={recentSearch} onChange={e => setRecentSearch(e.target.value)} className="ov-sel" style={{ padding: '8px 12px', fontSize: 12.5 }} />
+                                </div>
+                                <div style={{ overflowY: 'auto', maxHeight: 380 }}>
+                                    {paginatedRecent.length > 0 ? (
+                                        <table className="qtable">
+                                            <tbody>
+                                                {paginatedRecent.map((t, i) => (
+                                                    <RecentTokenRow key={`${t.token_number}-${i}`} token={t} prefix={state?.prefix || ""} />
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <div style={{ padding: 48, textAlign: 'center' }}>
+                                            <p style={{ fontSize: 13.5, color: C.textMuted, fontWeight: 500, margin: 0 }}>Cache empty. No logs recovered.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </main>
             </div>
 
-            {/* Skip Confirmation Modal */}
-            <ConfirmModal
-                isOpen={showSkipConfirm}
-                title="Skip Current Token?"
-                message={`This will skip token ${state?.prefix || ""}${state?.current_serving || 0} and move to the next waiting token.`}
-                confirmLabel="Skip Token"
-                confirmVariant="danger"
-                onConfirm={handleConfirmSkip}
-                onCancel={() => setShowSkipConfirm(false)}
-                isLoading={actionLoading === "skip"}
-            />
-
-            {/* Delete Confirmation Modal */}
-            <ConfirmModal
-                isOpen={showDeleteConfirm}
-                title="Delete Queue"
-                message={`Are you sure you want to permanently delete the queue "${state?.queue_name || "this queue"}"? All associated tokens and data will be lost forever.`}
-                confirmLabel="Delete Queue"
-                confirmVariant="danger"
-                onConfirm={handleDelete}
-                onCancel={() => setShowDeleteConfirm(false)}
-                isLoading={deleting}
-            />
-
-            {/* Reset Confirmation Modal */}
-            <ConfirmModal
-                isOpen={showResetConfirm}
-                title="Reset Queue"
-                message={`Are you sure you want to reset the queue "${state?.queue_name || "this queue"}"? This will delete all tokens and reset the current serving number to 0. This cannot be undone.`}
-                confirmLabel="Reset Queue"
-                confirmVariant="danger"
-                onConfirm={handleReset}
-                onCancel={() => setShowResetConfirm(false)}
-                isLoading={resetting}
-            />
-            {/* Remove Token Confirmation Modal */}
-            <ConfirmModal
-                isOpen={!!tokenToRemove}
-                title="Remove Customer"
-                message={`Are you sure you want to remove token ${state?.prefix || ""}${tokenToRemove?.number} from the waiting list? They will be permanently marked as deleted.`}
-                confirmLabel="Remove Token"
-                confirmVariant="danger"
-                onConfirm={handleConfirmRemove}
-                onCancel={() => setTokenToRemove(null)}
-                isLoading={actionLoading === "remove"}
-            />
-        </div>
+            <ConfirmModal isOpen={showSkipConfirm} title="Bypass Entity?" message={`Executing bypass on token ${state?.prefix || ""}${state?.current_serving || 0}. Entity will be flagged as skipped.`} confirmLabel="Execute Bypass" confirmVariant="danger" onConfirm={handleConfirmSkip} onCancel={() => setShowSkipConfirm(false)} isLoading={actionLoading === "skip"} />
+            <ConfirmModal isOpen={showDeleteConfirm} title="Drop Architecture" message={`Initiate destructive wipe on "${state?.queue_name || "queue"}". All metrics dissolved.`} confirmLabel="Initialize Wipe" confirmVariant="danger" onConfirm={handleDelete} onCancel={() => setShowDeleteConfirm(false)} isLoading={deleting} />
+            <ConfirmModal isOpen={showResetConfirm} title="Flush State Array" message={`Flush variables for "${state?.queue_name || "queue"}". Sequence registers revert to 0.`} confirmLabel="Execute Flush" confirmVariant="danger" onConfirm={handleReset} onCancel={() => setShowResetConfirm(false)} isLoading={resetting} />
+            <ConfirmModal isOpen={!!tokenToRemove} title="Drop External Entity" message={`Purge ${state?.prefix || ""}${tokenToRemove?.number} off sequence array?`} confirmLabel="Execute Drop" confirmVariant="danger" onConfirm={handleConfirmRemove} onCancel={() => setTokenToRemove(null)} isLoading={actionLoading === "remove"} />
+        </>
     );
 }
 
-// ── Memoized row to prevent re-render storms on frequent updates ──
-const RecentTokenRow = React.memo(function RecentTokenRow({
-    token: t,
-    prefix,
-}: {
-    token: RecentToken;
-    prefix: string;
-}) {
-    const statusStyles: Record<string, string> = {
-        serving: "bg-blue-100 text-blue-700",
-        done: "bg-emerald-100 text-emerald-700",
-        skipped: "bg-gray-100 text-gray-400",
-        deleted: "bg-red-100 text-red-700",
-        waiting: "bg-amber-100 text-amber-700",
+const RecentTokenRow = React.memo(function RecentTokenRow({ token: t, prefix }: { token: RecentToken; prefix: string; }) {
+    const STATUS_UI: Record<string, { bg: string, color: string }> = {
+        serving: { bg: C.blueBg, color: C.blue },
+        done: { bg: C.greenBg, color: C.green },
+        skipped: { bg: C.slateBg, color: C.textSub },
+        deleted: { bg: C.redBg, color: C.red },
+        waiting: { bg: C.amberBg, color: C.amber }
     };
+    const s = STATUS_UI[t.status] || STATUS_UI.skipped;
 
     return (
-        <div className="px-5 py-3">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold text-gray-900 tabular-nums w-14">
-                        {prefix}{t.token_number}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyles[t.status] || "bg-gray-100 text-gray-500"}`}>
-                        {t.status}
-                    </span>
+        <tr className="trow">
+            <td style={{ padding: '12px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div className="tnum" style={{ fontSize: 16, fontWeight: 800, color: C.text, width: 44 }}>{prefix}{t.token_number}</div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: 13.5, fontWeight: 600, color: C.text }}>{t.customer_name || "Anonymous"}</span>
+                            <span style={{ fontSize: 11, fontWeight: 500, color: C.textSub, fontFamily: "'JetBrains Mono', monospace" }}>{t.served_at ? new Date(t.served_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
+                        </div>
+                    </div>
+                    <span className="pill" style={{ background: s.bg, color: s.color, border: `1px solid ${C.border}` }}>{t.status}</span>
                 </div>
-                <span className="text-xs text-gray-400 tabular-nums">
-                    {t.served_at ? new Date(t.served_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
-                </span>
-            </div>
-            {t.customer_name && (
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500 pl-[68px]">
-                    <span className="font-medium text-gray-700">{t.customer_name}</span>
-                    {t.customer_age != null && <span>Age: {t.customer_age}</span>}
-                    <span>{t.customer_phone}</span>
-                </div>
-            )}
-        </div>
+            </td>
+        </tr>
     );
 });

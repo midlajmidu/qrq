@@ -5,11 +5,9 @@ import { api, ApiError } from "@/lib/api";
 import type { StaffMember, StaffCreate, StaffUpdate } from "@/types/api";
 import { useAuth } from "@/hooks/useAuth";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
 const DEBOUNCE_MS = 350;
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
 type ToastType = "success" | "error";
 interface ToastMessage { id: number; type: ToastType; msg: string; }
 
@@ -17,66 +15,97 @@ function Toast({ toasts, onDismiss }: { toasts: ToastMessage[]; onDismiss: (id: 
     return (
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
             {toasts.map(t => (
-                <div key={t.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-200 ${t.type === "success" ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"}`}>
+                <div key={t.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-[13.5px] font-medium pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-200 ${t.type === "success" ? "bg-emerald-50 text-emerald-800 border border-emerald-100" : "bg-red-50 text-red-800 border border-red-100"}`}>
                     {t.type === "success"
-                        ? <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                        : <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        ? <svg className="w-[18px] h-[18px] text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                        : <svg className="w-[18px] h-[18px] text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     }
                     {t.msg}
-                    <button onClick={() => onDismiss(t.id)} className="ml-1 text-current opacity-60 hover:opacity-100 transition-opacity">✕</button>
+                    <button onClick={() => onDismiss(t.id)} className="ml-2 text-current opacity-50 hover:opacity-100 transition-opacity">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
                 </div>
             ))}
         </div>
     );
 }
 
-// ── Badge ─────────────────────────────────────────────────────────────────────
+const C = {
+  pageBg:     "#f7f8fa",
+  cardBg:     "#ffffff",
+  border:     "#e8eaef",
+  borderHov:  "#c4ccd8",
+  borderLight:"#f1f2f5",
+  text:       "#0f1729",
+  textSub:    "#475569",
+  textMuted:  "#8b95a9",
+  brand:      "#4f46e5",
+  brandLight: "#eef2ff",
+  brandBorder:"#c7d2fe",
+  brandGlow:  "rgba(79,70,229,.10)",
+  blue:       "#3b82f6", blueBg: "#eff6ff",   blueBorder: "#bfdbfe",
+  green:      "#10b981", greenBg: "#ecfdf5",   greenBorder:"#a7f3d0",
+  amber:      "#f59e0b", amberBg: "#fffbeb",   amberBorder:"#fde68a",
+  red:        "#ef4444", redBg:   "#fef2f2",   redBorder:  "#fecaca",
+  slate:      "#64748b", slateBg: "#f8fafc",
+};
+
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+  .ov { font-family: 'Inter', sans-serif; color: ${C.text}; -webkit-font-smoothing: antialiased; }
+  .card { background: ${C.cardBg}; border: 1px solid ${C.border}; border-radius: 14px; box-shadow: 0 0 0 1px rgba(0,0,0,.02), 0 1px 2px rgba(0,0,0,.03), 0 2px 8px rgba(0,0,0,.025); transition: box-shadow .25s cubic-bezier(.4,0,.2,1), border-color .25s ease; }
+  .card:hover { box-shadow: 0 0 0 1px rgba(0,0,0,.03), 0 4px 12px rgba(0,0,0,.06), 0 8px 28px rgba(0,0,0,.04); border-color: ${C.borderHov}; }
+  .ov-sel { appearance: none; background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 8px; padding: 9px 34px 9px 12px; font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; min-width: 152px; box-shadow: 0 1px 2px rgba(0,0,0,.03); transition: all .2s cubic-bezier(.4,0,.2,1); }
+  .ov-sel:hover:not(:disabled) { border-color: #cbd5e1; background: #f8fafc; box-shadow: 0 2px 4px rgba(0,0,0,.04); }
+  .ov-sel:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,.15), 0 1px 2px rgba(0,0,0,.03); background: #ffffff; }
+  .ov-sel:disabled { opacity: .4; cursor: not-allowed; }
+  .qa-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif; color: #ffffff; background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%); border-radius: 10px; cursor: pointer; text-decoration: none; box-shadow: 0 1px 3px rgba(37,99,235,0.2), 0 1px 2px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,0.1); transition: all .22s ease; border: 1px solid transparent; }
+  .qa-btn:hover { background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%); transform: translateY(-0.5px); box-shadow: 0 4px 6px rgba(37,99,235,0.3); }
+  .icon-badge { display: flex; align-items: center; justify-content: center; border-radius: 11px; flex-shrink: 0; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+  .pg-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 12.5px; font-weight: 500; font-family: 'Inter', sans-serif; color: ${C.textSub}; background: ${C.cardBg}; border: 1px solid ${C.border}; border-radius: 10px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: all .22s ease; }
+  .pg-btn:hover:not(:disabled) { border-color: ${C.brandBorder}; color: ${C.brand}; background: ${C.brandLight}; box-shadow: 0 2px 6px ${C.brandGlow}; }
+  .pg-btn:disabled { opacity: .3; cursor: not-allowed; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .qtable { width: 100%; border-collapse: collapse; text-align: left; }
+  .qtable th { padding: 12px 16px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: ${C.textMuted}; border-bottom: 1px solid ${C.border}; background: linear-gradient(180deg, #fafbfd, ${C.slateBg}); font-family: 'Inter', sans-serif; }
+  .qtable td { padding: 14px 16px; font-size: 13.5px; font-weight: 500; color: ${C.text}; border-bottom: 1px solid ${C.borderLight}; }
+  .qtable tbody tr { transition: background .12s ease; }
+  .qtable tbody tr:hover td { background: #f8f9ff; }
+`;
+
 function StatusBadge({ active }: { active: boolean }) {
-    return (
-        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-green-500" : "bg-red-400"}`} />
-            {active ? "Active" : "Inactive"}
-        </span>
-    );
+    if (active) {
+        return <span className="pill" style={{ background: C.greenBg, color: C.green, border: `1px solid ${C.greenBorder}` }}>Active</span>;
+    }
+    return <span className="pill" style={{ background: C.slateBg, color: C.textSub, border: `1px solid ${C.border}` }}>Inactive</span>;
 }
 
 function RoleBadge({ role }: { role: string }) {
-    return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${role === "admin" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
-            {role === "admin" ? "Admin" : "Staff"}
-        </span>
-    );
+    if (role === "admin") {
+        return <span className="pill" style={{ background: C.blueBg, color: C.blue, border: `1px solid ${C.blueBorder}` }}>Admin</span>;
+    }
+    return <span className="pill" style={{ background: C.slateBg, color: C.textSub, border: `1px solid ${C.border}` }}>Staff</span>;
 }
 
-// ── Skeleton ──────────────────────────────────────────────────────────────────
 function TableSkeleton() {
     return (
         <>
             {[...Array(5)].map((_, i) => (
                 <tr key={i} className="animate-pulse">
-                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-40" /></td>
-                    <td className="px-6 py-4"><div className="h-5 bg-gray-200 rounded-full w-16" /></td>
-                    <td className="px-6 py-4"><div className="h-5 bg-gray-200 rounded-full w-14" /></td>
-                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-24" /></td>
-                    <td className="px-6 py-4"><div className="h-8 bg-gray-200 rounded w-20 ml-auto" /></td>
+                    <td style={{ padding: '16px' }}><div style={{ height: 16, background: C.borderLight, borderRadius: 4, width: 160 }} /></td>
+                    <td style={{ padding: '16px' }}><div style={{ height: 20, background: C.borderLight, borderRadius: 99, width: 64 }} /></td>
+                    <td style={{ padding: '16px' }}><div style={{ height: 20, background: C.borderLight, borderRadius: 99, width: 56 }} /></td>
+                    <td style={{ padding: '16px' }}><div style={{ height: 16, background: C.borderLight, borderRadius: 4, width: 96 }} /></td>
+                    <td style={{ padding: '16px' }}></td>
                 </tr>
             ))}
         </>
     );
 }
 
-// ── Staff Modal (Create + Edit) ───────────────────────────────────────────────
-function StaffModal({
-    mode,
-    member,
-    onClose,
-    onSaved,
-}: {
-    mode: "create" | "edit";
-    member?: StaffMember;
-    onClose: () => void;
-    onSaved: (m: StaffMember) => void;
-}) {
+function StaffModal({ mode, member, onClose, onSaved }: { mode: "create" | "edit"; member?: StaffMember; onClose: () => void; onSaved: (m: StaffMember) => void; }) {
     const isEdit = mode === "edit";
     const [email, setEmail] = useState(member?.email ?? "");
     const [isActive, setIsActive] = useState(member?.is_active ?? true);
@@ -120,110 +149,71 @@ function StaffModal({
                 if (newPassword) update.new_password = newPassword;
                 result = await api.updateStaff(member.id, update);
             } else {
-                const create: StaffCreate = { email, password };
-                result = await api.createStaff(create);
+                result = await api.createStaff({ email, password });
             }
             onSaved(result);
         } catch (err) {
-            setFieldError(err instanceof ApiError ? err.detail : "An error occurred. Please try again.");
+            setFieldError(err instanceof ApiError ? err.detail : "An error occurred.");
         } finally {
             setIsSaving(false);
         }
     };
 
-    const inputCls = "w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors disabled:bg-gray-50 disabled:text-gray-500";
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-base font-semibold text-gray-900">
-                        {isEdit ? "Edit Staff Member" : "Add New Staff Member"}
-                    </h2>
-                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" style={{ fontFamily: "'Inter', sans-serif" }}>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+            <div className="relative w-full max-w-[420px] bg-white rounded-[20px] shadow-[0_20px_40px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.02)] overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100 bg-[#fafbfe]">
+                    <h2 className="text-[17px] font-extrabold text-[#0f172a] tracking-tight">{isEdit ? "Edit Staff" : "Add Staff"}</h2>
+                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-[#0f172a] hover:bg-slate-100 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg></button>
                 </div>
-
-                <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4" noValidate>
-                    {fieldError && (
-                        <div role="alert" className="bg-red-50 text-red-700 text-sm p-3 rounded-lg border border-red-200">{fieldError}</div>
-                    )}
-
-                    {/* Email */}
+                <form onSubmit={handleSubmit} className="px-7 py-6 space-y-5" noValidate>
+                    {fieldError && <div className="bg-red-50 text-red-700 text-[13px] font-medium p-3 rounded-xl border border-red-100 flex items-start gap-2"><svg className="w-[18px] h-[18px] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>{fieldError}</div>}
                     <div>
-                        <label htmlFor="staff-email" className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
-                        <input id="staff-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="off" disabled={isSaving} placeholder="jane@clinic.com" className={inputCls} />
+                        <label className="block text-[10.5px] font-bold text-[#64748b] uppercase tracking-[0.08em] mb-2">Email Address <span className="text-red-500">*</span></label>
+                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isSaving} placeholder="jane@clinic.com" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] text-[#0f172a] font-medium bg-[#fafbfe] hover:border-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-400/80" />
                     </div>
-
-                    {/* Active toggle — edit only */}
                     {isEdit && (
                         <div className="flex items-center justify-between py-1">
-                            <span className="text-sm font-medium text-gray-700">Account Status</span>
+                            <span className="text-[14px] font-bold text-[#0f172a]">Account Status</span>
                             <div className="flex items-center gap-3">
-                                <span className="text-sm text-gray-500">{isActive ? "Active" : "Inactive"}</span>
-                                <button type="button" role="switch" aria-checked={isActive} onClick={() => setIsActive(!isActive)} disabled={isSaving} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${isActive ? "bg-blue-600" : "bg-gray-300"}`}>
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isActive ? "translate-x-6" : "translate-x-1"}`} />
-                                </button>
+                                <span className="text-sm font-medium text-slate-500">{isActive ? "Active" : "Inactive"}</span>
+                                <button type="button" role="switch" aria-checked={isActive} onClick={() => setIsActive(!isActive)} disabled={isSaving} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${isActive ? "bg-indigo-600" : "bg-slate-300"}`}><span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isActive ? "translate-x-6" : "translate-x-1"}`} /></button>
                             </div>
                         </div>
                     )}
-
-                    {/* Password — create mode */}
                     {!isEdit && (
                         <>
-                            <hr className="border-gray-100" />
+                            <hr className="border-slate-100" />
                             <div>
-                                <label htmlFor="staff-password" className="block text-sm font-medium text-gray-700 mb-1.5">Password <span className="text-gray-400 font-normal text-xs">(min 8 characters)</span></label>
-                                <input id="staff-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="new-password" disabled={isSaving} placeholder="••••••••" className={inputCls} />
-                                {password && (
-                                    <div className="mt-1.5 h-1 rounded-full bg-gray-200 overflow-hidden">
-                                        <div className={`h-full rounded-full transition-all ${password.length < 8 ? "w-1/4 bg-red-400" : password.length < 12 ? "w-2/4 bg-yellow-400" : "w-full bg-green-500"}`} />
-                                    </div>
-                                )}
+                                <label className="block text-[10.5px] font-bold text-[#64748b] uppercase tracking-[0.08em] mb-2 flex items-center justify-between"><span>Password <span className="text-red-500">*</span></span><span className="text-slate-400 font-medium normal-case tracking-normal">min 8 char</span></label>
+                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} required disabled={isSaving} placeholder="••••••••" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] text-[#0f172a] font-medium bg-[#fafbfe] hover:border-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-400/80" />
                             </div>
                             <div>
-                                <label htmlFor="staff-confirm" className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
-                                <input id="staff-confirm" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required autoComplete="new-password" disabled={isSaving} placeholder="••••••••" className={inputCls} />
-                                {confirmPassword && password !== confirmPassword && (
-                                    <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
-                                )}
+                                <label className="block text-[10.5px] font-bold text-[#64748b] uppercase tracking-[0.08em] mb-2">Confirm Password <span className="text-red-500">*</span></label>
+                                <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required disabled={isSaving} placeholder="••••••••" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] text-[#0f172a] font-medium bg-[#fafbfe] hover:border-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-400/80" />
                             </div>
                         </>
                     )}
-
-                    {/* Reset Password — edit mode (optional) */}
                     {isEdit && (
                         <>
-                            <hr className="border-gray-100" />
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Password <span className="font-normal normal-case">(optional)</span></p>
+                            <hr className="border-slate-100" />
+                            <p className="text-[10.5px] font-bold text-[#64748b] uppercase tracking-[0.08em]">Reset Password <span className="font-medium tracking-normal normal-case text-slate-400 lowercase">(optional)</span></p>
                             <div>
-                                <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
-                                <input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} autoComplete="new-password" disabled={isSaving} placeholder="Leave blank to keep current" className={inputCls} />
+                                <label className="block text-[10.5px] font-bold text-[#64748b] uppercase tracking-[0.08em] mb-2">New Password</label>
+                                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} disabled={isSaving} placeholder="Leave blank to keep current" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] text-[#0f172a] font-medium bg-[#fafbfe] hover:border-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-400/80" />
                             </div>
                             {newPassword && (
                                 <div>
-                                    <label htmlFor="confirm-new" className="block text-sm font-medium text-gray-700 mb-1.5">Confirm New Password</label>
-                                    <input id="confirm-new" type="password" value={confirmNew} onChange={e => setConfirmNew(e.target.value)} autoComplete="new-password" disabled={isSaving} placeholder="••••••••" className={inputCls} />
-                                    {confirmNew && newPassword !== confirmNew && (
-                                        <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
-                                    )}
+                                    <label className="block text-[10.5px] font-bold text-[#64748b] uppercase tracking-[0.08em] mb-2">Confirm New Password</label>
+                                    <input type="password" value={confirmNew} onChange={e => setConfirmNew(e.target.value)} disabled={isSaving} placeholder="••••••••" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] text-[#0f172a] font-medium bg-[#fafbfe] hover:border-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-400/80" />
                                 </div>
                             )}
                         </>
                     )}
-
-                    {/* Actions */}
-                    <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={onClose} disabled={isSaving} className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm">Cancel</button>
-                        <button type="submit" disabled={isSaving} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                            {isSaving
-                                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving...</span>
-                                : isEdit ? "Save Changes" : "Create Staff"
-                            }
-                        </button>
+                    <div className="flex gap-3 pt-3">
+                        <button type="button" onClick={onClose} disabled={isSaving} className="flex-1 px-4 py-2.5 text-[13.5px] font-semibold text-[#64748b] bg-white border border-slate-200 hover:bg-slate-50 hover:text-[#0f172a] rounded-xl transition-all">Cancel</button>
+                        <button type="submit" disabled={isSaving} className="flex-[1.5] px-4 py-2.5 text-[13.5px] font-semibold text-white bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-transparent rounded-xl disabled:opacity-50 transition-all shadow-[0_1px_3px_rgba(37,99,235,0.2),inset_0_1px_0_rgba(255,255,255,0.1)]">{isSaving ? "Saving..." : isEdit ? "Save Changes" : "Create Staff"}</button>
                     </div>
                 </form>
             </div>
@@ -231,98 +221,67 @@ function StaffModal({
     );
 }
 
-// ── Deactivate Confirmation ───────────────────────────────────────────────────
-function ConfirmDeactivateModal({
-    member,
-    onClose,
-    onConfirm,
-    isLoading,
-}: {
-    member: StaffMember;
-    onClose: () => void;
-    onConfirm: () => void;
-    isLoading: boolean;
-}) {
-    useEffect(() => {
-        const h = (e: KeyboardEvent) => { if (e.key === "Escape" && !isLoading) onClose(); };
-        window.addEventListener("keydown", h);
-        return () => window.removeEventListener("keydown", h);
-    }, [onClose, isLoading]);
-
+function ConfirmDeactivateModal({ member, onClose, onConfirm, isLoading }: { member: StaffMember; onClose: () => void; onConfirm: () => void; isLoading: boolean; }) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={!isLoading ? onClose : undefined} />
-            <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-200 p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" style={{ fontFamily: "'Inter', sans-serif" }}>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={!isLoading ? onClose : undefined} />
+            <div className="relative w-full max-w-[400px] bg-white rounded-[20px] shadow-[0_20px_40px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.02)] p-7 animate-in fade-in zoom-in duration-200">
+                <div className="flex items-start gap-4 mb-4">
+                    <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center flex-shrink-0 border border-red-100">
+                        <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     </div>
                     <div>
-                        <h2 className="text-base font-semibold text-gray-900">Deactivate Staff Member?</h2>
-                        <p className="text-xs text-gray-500 mt-0.5">This user will no longer be able to log in.</p>
+                        <h2 className="text-[18px] font-extrabold text-[#0f172a] tracking-tight">Deactivate Staff?</h2>
+                        <p className="text-[13.5px] text-slate-500 mt-1 leading-relaxed">This user will immediately lose access to the dashboard.</p>
                     </div>
                 </div>
-                <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                    <span className="font-medium text-gray-900">{member.email}</span> will lose all access immediately.
-                </p>
+                <div className="bg-[#fafbfe] rounded-xl px-4 py-3 border border-slate-100 my-6 shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]"><span className="font-bold text-[#0f172a] text-[13.5px]">{member.email}</span></div>
                 <div className="flex gap-3">
-                    <button onClick={onClose} disabled={isLoading} className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm">Cancel</button>
-                    <button onClick={onConfirm} disabled={isLoading} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        {isLoading
-                            ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Deactivating...</span>
-                            : "Confirm Deactivation"
-                        }
-                    </button>
+                    <button onClick={onClose} disabled={isLoading} className="flex-1 px-4 py-2.5 text-[13.5px] font-semibold text-[#64748b] bg-white border border-slate-200 hover:bg-slate-50 hover:text-[#0f172a] rounded-xl transition-all">Cancel</button>
+                    <button onClick={onConfirm} disabled={isLoading} className="flex-[1.5] px-4 py-2.5 text-[13.5px] font-semibold text-white bg-red-500 hover:bg-red-600 border border-transparent rounded-xl disabled:opacity-50 transition-all shadow-[0_1px_3px_rgba(239,68,68,0.2)]">{isLoading ? "Wait..." : "Deactivate"}</button>
                 </div>
             </div>
         </div>
     );
 }
 
-// ── Pagination ────────────────────────────────────────────────────────────────
 function Pagination({ total, limit, offset, onChange }: { total: number; limit: number; offset: number; onChange: (o: number) => void }) {
     const current = Math.floor(offset / limit) + 1;
     const pages = Math.max(1, Math.ceil(total / limit));
     if (pages <= 1) return null;
     return (
-        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500">Showing {offset + 1}–{Math.min(offset + limit, total)} of {total}</p>
-            <div className="flex items-center gap-1">
-                <button onClick={() => onChange(offset - limit)} disabled={offset === 0} className="px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-200 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors">← Prev</button>
-                {[...Array(Math.min(pages, 5))].map((_, i) => {
-                    const p = i + 1;
-                    return <button key={p} onClick={() => onChange((p - 1) * limit)} className={`w-7 h-7 text-xs rounded-lg transition-colors ${p === current ? "bg-blue-600 text-white font-semibold" : "text-gray-600 hover:bg-gray-200"}`}>{p}</button>;
-                })}
-                <button onClick={() => onChange(offset + limit)} disabled={offset + limit >= total} className="px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-200 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Next →</button>
+        <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: `1px solid ${C.borderLight}` }}>
+            <p className="text-[13px] font-medium text-[#475569]">Showing <span className="font-bold text-[#0f172a]">{offset + 1}</span> to <span className="font-bold text-[#0f172a]">{Math.min(offset + limit, total)}</span> of <span className="font-bold text-[#0f172a]">{total}</span></p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button onClick={() => onChange(offset - limit)} disabled={offset === 0} className="pg-btn"><svg width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Prev</button>
+                <div className="hidden sm:flex items-center gap-1.5 px-2">
+                    {[...Array(Math.min(pages, 5))].map((_, i) => {
+                        const p = i + 1;
+                        return <button key={p} onClick={() => onChange((p - 1) * limit)} className={`w-8 h-8 rounded-lg text-[13px] font-semibold transition-all ${p === current ? "bg-gradient-to-b from-blue-600 to-blue-700 text-white shadow-[0_1px_2px_rgba(37,99,235,0.2)]" : "text-slate-500 hover:bg-slate-100 hover:text-blue-700"}`}>{p}</button>;
+                    })}
+                </div>
+                <button onClick={() => onChange(offset + limit)} disabled={offset + limit >= total} className="pg-btn">Next <svg width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
             </div>
         </div>
     );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function StaffPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === "admin";
-
     const [members, setMembers] = useState<StaffMember[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
-
-    // Search / filter / pagination
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
     const [offset, setOffset] = useState(0);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // Modals
     const [showCreate, setShowCreate] = useState(false);
     const [editMember, setEditMember] = useState<StaffMember | null>(null);
     const [deactivateMember, setDeactivateMember] = useState<StaffMember | null>(null);
     const [isDeactivating, setIsDeactivating] = useState(false);
-
-    // Toasts
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
     const toastId = useRef(0);
 
@@ -334,21 +293,12 @@ export default function StaffPage() {
 
     const dismissToast = useCallback((id: number) => setToasts(prev => prev.filter(t => t.id !== id)), []);
 
-    // Load staff
     const loadStaff = useCallback(async (opts?: { search?: string; status?: typeof statusFilter; offset?: number }) => {
-        setLoading(true);
-        setLoadError(null);
+        setLoading(true); setLoadError(null);
         try {
-            const activeFilter = (opts?.status ?? statusFilter) === "all" ? undefined
-                : (opts?.status ?? statusFilter) === "active";
-            const res = await api.listStaff({
-                search: opts?.search ?? debouncedSearch,
-                is_active: activeFilter,
-                limit: PAGE_SIZE,
-                offset: opts?.offset ?? offset,
-            });
-            setMembers(res.items);
-            setTotal(res.total);
+            const activeFilter = (opts?.status ?? statusFilter) === "all" ? undefined : (opts?.status ?? statusFilter) === "active";
+            const res = await api.listStaff({ search: opts?.search ?? debouncedSearch, is_active: activeFilter, limit: PAGE_SIZE, offset: opts?.offset ?? offset });
+            setMembers(res.items); setTotal(res.total);
         } catch (err) {
             setLoadError(err instanceof ApiError ? err.detail : "Failed to load staff.");
         } finally {
@@ -361,29 +311,14 @@ export default function StaffPage() {
     const handleSearchChange = (val: string) => {
         setSearch(val);
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-            setDebouncedSearch(val);
-            setOffset(0);
-        }, DEBOUNCE_MS);
+        debounceRef.current = setTimeout(() => { setDebouncedSearch(val); setOffset(0); }, DEBOUNCE_MS);
     };
 
-    const handleFilterChange = (f: "all" | "active" | "inactive") => {
-        setStatusFilter(f);
-        setOffset(0);
-    };
+    const handleFilterChange = (f: "all" | "active" | "inactive") => { setStatusFilter(f); setOffset(0); };
 
-    // Callbacks
     const handleSaved = useCallback((saved: StaffMember) => {
-        if (editMember) {
-            setMembers(prev => prev.map(m => m.id === saved.id ? saved : m));
-            toast("success", "Staff member updated successfully.");
-        } else {
-            setMembers(prev => [saved, ...prev]);
-            setTotal(t => t + 1);
-            toast("success", `${saved.email} has been added to your team.`);
-        }
-        setShowCreate(false);
-        setEditMember(null);
+        if (editMember) { setMembers(prev => prev.map(m => m.id === saved.id ? saved : m)); toast("success", "Staff member updated successfully."); } else { setMembers(prev => [saved, ...prev]); setTotal(t => t + 1); toast("success", `${saved.email} has been added to your team.`); }
+        setShowCreate(false); setEditMember(null);
     }, [editMember, toast]);
 
     const handleDeactivate = useCallback(async () => {
@@ -391,155 +326,108 @@ export default function StaffPage() {
         setIsDeactivating(true);
         try {
             const updated = await api.deactivateStaff(deactivateMember.id);
-            setMembers(prev => prev.map(m => m.id === updated.id ? updated : m));
-            setDeactivateMember(null);
-            toast("success", `${updated.email} has been deactivated.`);
-        } catch (err) {
-            toast("error", err instanceof ApiError ? err.detail : "Failed to deactivate staff member.");
-        } finally {
-            setIsDeactivating(false);
-        }
+            setMembers(prev => prev.map(m => m.id === updated.id ? updated : m)); setDeactivateMember(null); toast("success", `${updated.email} has been deactivated.`);
+        } catch (err) { toast("error", err instanceof ApiError ? err.detail : "Failed to deactivate staff member."); } finally { setIsDeactivating(false); }
     }, [deactivateMember, toast]);
 
     const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
     return (
         <>
+            <style>{STYLES}</style>
             <Toast toasts={toasts} onDismiss={dismissToast} />
+            {showCreate && <StaffModal mode="create" onClose={() => setShowCreate(false)} onSaved={handleSaved} />}
+            {editMember && <StaffModal mode="edit" member={editMember} onClose={() => setEditMember(null)} onSaved={handleSaved} />}
+            {deactivateMember && <ConfirmDeactivateModal member={deactivateMember} onClose={() => setDeactivateMember(null)} onConfirm={handleDeactivate} isLoading={isDeactivating} />}
 
-            {showCreate && (
-                <StaffModal mode="create" onClose={() => setShowCreate(false)} onSaved={handleSaved} />
-            )}
-            {editMember && (
-                <StaffModal mode="edit" member={editMember} onClose={() => setEditMember(null)} onSaved={handleSaved} />
-            )}
-            {deactivateMember && (
-                <ConfirmDeactivateModal member={deactivateMember} onClose={() => setDeactivateMember(null)} onConfirm={handleDeactivate} isLoading={isDeactivating} />
-            )}
-
-            <div className="space-y-6">
-                {/* Page Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
-                        <p className="mt-1 text-sm text-gray-500">Manage team members in your organization.</p>
-                    </div>
-                    {isAdmin && (
-                        <button
-                            onClick={() => setShowCreate(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                            Add Staff
-                        </button>
-                    )}
-                </div>
-
-                {/* Table Card */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    {/* Search + Filter */}
-                    <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
-                        <div className="relative flex-1">
-                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            <input
-                                type="search"
-                                value={search}
-                                onChange={e => handleSearchChange(e.target.value)}
-                                placeholder="Search by email…"
-                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors"
-                            />
+            <div className="ov">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+                    
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <div className="icon-badge" style={{ background: C.brandLight, color: C.brand, width: 28, height: 28 }}>
+                                    <svg width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                </div>
+                                <span style={{ fontSize: '11.5px', fontWeight: 700, letterSpacing: '.06em', color: C.brand, textTransform: 'uppercase' }}>Organization Settings</span>
+                            </div>
+                            <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-.02em', color: C.text, margin: '0 0 6px 0' }}>Staff Management</h1>
+                            <p style={{ fontSize: '14px', color: C.textSub, margin: 0, maxWidth: '500px', lineHeight: 1.5 }}>Add and manage team members who can access the dashboard.</p>
                         </div>
-                        <select
-                            value={statusFilter}
-                            onChange={e => handleFilterChange(e.target.value as "all" | "active" | "inactive")}
-                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-colors bg-white"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                        <button onClick={() => loadStaff()} disabled={loading} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40" aria-label="Refresh">
-                            <svg className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                        </button>
+                        {isAdmin && (
+                            <button onClick={() => setShowCreate(true)} className="qa-btn" style={{ height: 42 }}>
+                                <svg width={18} height={18} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add Member
+                            </button>
+                        )}
                     </div>
 
-                    {/* Error */}
-                    {loadError && (
-                        <div role="alert" className="m-4 bg-red-50 text-red-700 p-3 rounded-lg border border-red-200 text-sm">
-                            {loadError} <button onClick={() => loadStaff()} className="ml-2 underline font-medium">Retry</button>
+                    {/* Table Card */}
+                    <div className="card">
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, padding: '20px 24px', borderBottom: `1px solid ${C.borderLight}` }}>
+                            <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
+                                <svg width={16} height={16} fill="none" stroke={C.textMuted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                <input type="search" value={search} onChange={e => handleSearchChange(e.target.value)} placeholder="Search staff..." className="ov-sel" style={{ width: '100%', paddingLeft: 40 }} />
+                            </div>
+                            <div style={{ position: 'relative' }}>
+                                <select value={statusFilter} onChange={e => handleFilterChange(e.target.value as "all" | "active" | "inactive")} className="ov-sel">
+                                    <option value="all">All Statuses</option>
+                                    <option value="active">Active Only</option>
+                                    <option value="inactive">Inactive Only</option>
+                                </select>
+                                <svg width={14} height={14} fill="none" stroke={C.textMuted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}><polyline points="6 9 12 15 18 9"/></svg>
+                            </div>
+                            <button onClick={() => loadStaff()} disabled={loading} className="pg-btn" style={{ padding: '0 16px', height: '40px' }} aria-label="Refresh">
+                                <svg width={16} height={16} className={loading ? "animate-spin" : ""} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                            </button>
                         </div>
-                    )}
-
-                    {/* Table */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm" aria-label="Staff members">
-                            <thead>
-                                <tr className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
-                                    <th className="px-6 py-3">Email</th>
-                                    <th className="px-6 py-3">Role</th>
-                                    <th className="px-6 py-3">Status</th>
-                                    <th className="px-6 py-3">Joined</th>
-                                    {isAdmin && <th className="px-6 py-3 text-right">Actions</th>}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {loading ? (
-                                    <TableSkeleton />
-                                ) : members.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={isAdmin ? 5 : 4} className="py-16 text-center">
-                                            <div className="flex flex-col items-center gap-3">
-                                                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                                                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        {loadError && (
+                            <div role="alert" className="m-5 bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 text-[13.5px] flex items-center justify-between">
+                                {loadError}
+                                <button onClick={() => loadStaff()} className="underline font-semibold hover:text-red-800">Retry</button>
+                            </div>
+                        )}
+                        <div style={{ overflowX: 'auto' }}>
+                            <table className="qtable">
+                                <thead>
+                                    <tr><th>Email</th><th>Role</th><th>Status</th><th>Joined</th>{isAdmin && <th style={{ textAlign: 'right' }}>Actions</th>}</tr>
+                                </thead>
+                                <tbody>
+                                    {loading ? <TableSkeleton /> : members.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={isAdmin ? 5 : 4} style={{ padding: '60px 24px', textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                                                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.slateBg, display: 'flex', alignItems: 'center', justifyItems: 'center', border: `1px solid ${C.border}` }}>
+                                                        <svg width={24} height={24} fill="none" stroke={C.textMuted} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" style={{ margin: 'auto' }}><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: '15px', fontWeight: 600, color: C.text, marginBottom: 4 }}>{debouncedSearch ? `No staff matching "${debouncedSearch}"` : "No staff found"}</div>
+                                                        <div style={{ fontSize: '13.5px', color: C.textSub }}>{debouncedSearch ? "Try checking for typos." : "Your organization doesn't have any staff added yet."}</div>
+                                                    </div>
                                                 </div>
-                                                <p className="text-gray-500 font-medium">
-                                                    {debouncedSearch ? `No staff matching "${debouncedSearch}"` : "No staff yet"}
-                                                </p>
-                                                {isAdmin && !debouncedSearch && (
-                                                    <button onClick={() => setShowCreate(true)} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                                        Add your first team member →
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    members.map(m => (
-                                        <tr key={m.id} className="hover:bg-gray-50 transition-colors group">
-                                            <td className="px-6 py-4 font-medium text-gray-900">{m.email}</td>
-                                            <td className="px-6 py-4"><RoleBadge role={m.role} /></td>
-                                            <td className="px-6 py-4"><StatusBadge active={m.is_active} /></td>
-                                            <td className="px-6 py-4 text-gray-500">{fmt(m.created_at)}</td>
+                                            </td>
+                                        </tr>
+                                    ) : members.map(m => (
+                                        <tr key={m.id} className="trow group">
+                                            <td style={{ fontWeight: 600, color: C.text }}>{m.email}</td>
+                                            <td><RoleBadge role={m.role} /></td>
+                                            <td><StatusBadge active={m.is_active} /></td>
+                                            <td className="tnum" style={{ color: C.textSub }}>{fmt(m.created_at)}</td>
                                             {isAdmin && (
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button
-                                                            onClick={() => setEditMember(m)}
-                                                            aria-label={`Edit ${m.email}`}
-                                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setDeactivateMember(m)}
-                                                            disabled={!m.is_active}
-                                                            aria-label={`Deactivate ${m.email}`}
-                                                            title={!m.is_active ? "Already inactive" : "Deactivate"}
-                                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-                                                        </button>
+                                                <td style={{ textAlign: 'right' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => setEditMember(m)} style={{ padding: 6, color: C.textMuted, borderRadius: 8, transition: 'all .2s' }} className="hover:bg-blue-50 hover:text-blue-600"><svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+                                                        <button onClick={() => setDeactivateMember(m)} disabled={!m.is_active} style={{ padding: 6, color: C.textMuted, borderRadius: 8, transition: 'all .2s', opacity: m.is_active ? 1 : 0.3 }} className="hover:bg-red-50 hover:text-red-600 focus:outline-none"><svg width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>
                                                     </div>
                                                 </td>
                                             )}
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <Pagination total={total} limit={PAGE_SIZE} offset={offset} onChange={setOffset} />
                     </div>
-
-                    <Pagination total={total} limit={PAGE_SIZE} offset={offset} onChange={setOffset} />
                 </div>
             </div>
         </>
