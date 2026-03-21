@@ -121,6 +121,8 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+    environment:
+      - BACKEND_URL=http://backend:8000
     deploy:
       resources:
         limits:

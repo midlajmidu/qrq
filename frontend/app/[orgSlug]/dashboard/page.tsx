@@ -754,7 +754,7 @@ export default function OverviewPage() {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-end", position: "relative", zIndex: 1 }}>
                   {[
                     {
-                      lbl: "Session", val: selectedSession, set: setSelectedSession, dis: false,
+                      id: "filter-session", lbl: "Session", val: selectedSession, set: setSelectedSession, dis: false,
                       opts: <>
                         <option value="">All Sessions</option>
                         {sessions.map(s => (
@@ -766,7 +766,7 @@ export default function OverviewPage() {
                       </>,
                     },
                     {
-                      lbl: "Queue", val: selectedQueue, set: setSelectedQueue, dis: !selectedSession,
+                      id: "filter-queue", lbl: "Queue", val: selectedQueue, set: setSelectedQueue, dis: !selectedSession,
                       opts: <>
                         <option value="">All Queues</option>
                         {queues.map(q => <option key={q.id} value={q.id}>{q.name}</option>)}
@@ -774,9 +774,9 @@ export default function OverviewPage() {
                     },
                   ].map(f => (
                     <div key={f.lbl} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <span className="lbl" style={{ fontSize: 11, letterSpacing: '.04em', color: "#64748b", fontWeight: 500 }}>{f.lbl}</span>
+                      <label htmlFor={f.id} className="lbl" style={{ fontSize: 11, letterSpacing: '.04em', color: "#64748b", fontWeight: 500 }}>{f.lbl}</label>
                       <div style={{ position: "relative", transition: "transform .2s ease", cursor: "pointer" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-1px)"} onMouseLeave={e => e.currentTarget.style.transform = "none"}>
-                        <select value={f.val} onChange={e => f.set(e.target.value)} disabled={f.dis} className="ov-sel">
+                        <select id={f.id} name={f.id} value={f.val} onChange={e => f.set(e.target.value)} disabled={f.dis} className="ov-sel">
                           {f.opts}
                         </select>
                         <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", opacity: 0.4 }}>
