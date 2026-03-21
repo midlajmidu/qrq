@@ -63,8 +63,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         </header>
                     )}
 
-                    <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-y-auto md:overflow-y-visible">
-                        <div className="max-w-7xl mx-auto w-full">
+                    <main className={!isManageQueuePage ? "flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-y-auto md:overflow-y-visible" : "flex-1 overflow-hidden"}>
+                        <div className={!isManageQueuePage ? "max-w-7xl mx-auto w-full" : "w-full h-full"}>
                             {children}
                         </div>
                     </main>
