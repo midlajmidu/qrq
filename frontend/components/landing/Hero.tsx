@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const stats = [
-  { icon: Zap, value: "Live", label: "Real-time updates", iconBg: "bg-blue-500 shadow-md shadow-blue-500/20", iconColor: "text-white" },
+  { icon: Zap, value: "Live", label: "Real time updates", iconBg: "bg-blue-500 shadow-md shadow-blue-500/20", iconColor: "text-white" },
   { icon: QrCode, value: "No App", label: "Scan to join", iconBg: "bg-violet-500 shadow-md shadow-violet-500/20", iconColor: "text-white" },
   { icon: Clock, value: "Instant", label: "Setup in seconds", iconBg: "bg-emerald-500 shadow-md shadow-emerald-500/20", iconColor: "text-white" },
 ];
@@ -16,7 +16,7 @@ const Hero = () => {
   const router = useRouter();
 
   return (
-    <section className="relative pt-28 pb-10 md:pt-36 md:pb-16 px-6 overflow-hidden bg-hero-glow">
+    <section className="relative pt-24 pb-4 md:pt-32 md:pb-8 px-6 overflow-hidden bg-hero-glow">
       {/* Decorative grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(220_16%_90%/0.5)_1px,transparent_1px),linear-gradient(to_bottom,hsl(220_16%_90%/0.5)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black_70%,transparent_100%)]" />
 
@@ -75,7 +75,7 @@ const Hero = () => {
 
           {/* Social proof row */}
           <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
-            {["1-week free trial", "No sign-up required", "Set up in minutes"].map((text, i) => (
+            {["1 week free trial", "No sign up required", "Set up in minutes"].map((text, i) => (
               <motion.span
                 key={text}
                 className="flex items-center gap-1.5 font-medium"

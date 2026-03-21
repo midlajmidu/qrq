@@ -109,6 +109,8 @@ async function request<T>(
     try {
         resp = await fetch(url, { ...options, headers });
     } catch (err) {
+        if ((err as Error)?.name === "AbortError") throw err;
+
         // Network failure — server unreachable
         logger.error("Network request failed", { path, error: String(err) });
         throw new ApiError({
@@ -185,7 +187,7 @@ export const api = {
     },
 
     // ── Analytics ────────────────────────────────────────────────
-    getOverview(sessionId?: string, queueId?: string, recentLimit?: number, recentOffset?: number): Promise<AnalyticsOverview> {
+    getOverview(sessionId?: string, queueId?: string, recentLimit?: number, recentOffset?: number, init?: RequestInit): Promise<AnalyticsOverview> {
         const params = new URLSearchParams();
         if (sessionId) params.append("session_id", sessionId);
         if (queueId) params.append("queue_id", queueId);
@@ -194,13 +196,15 @@ export const api = {
 
         const qs = params.toString();
         const url = qs ? `/analytics/overview?${qs}` : "/analytics/overview";
-        return request<AnalyticsOverview>(url);
+        return request<AnalyticsOverview>(url, init);
     },
 
-    getHistory(params: { sessionId?: string; queueId?: string; limit?: number; offset?: number } = {}): Promise<PaginatedHistoryResponse> {
+    getHistory(params: { sessionId?: string; queueId?: string; search?: string; status?: string; limit?: number; offset?: number } = {}): Promise<PaginatedHistoryResponse> {
         const qs = new URLSearchParams();
         if (params.sessionId) qs.set("session_id", params.sessionId);
         if (params.queueId) qs.set("queue_id", params.queueId);
+        if (params.search) qs.set("search", params.search);
+        if (params.status) qs.set("status", params.status);
         if (params.limit != null) qs.set("limit", String(params.limit));
         if (params.offset != null) qs.set("offset", String(params.offset));
 
