@@ -328,20 +328,46 @@ export const api = {
         });
     },
 
-    getCallLogs(params?: { queue_id?: string; staff_id?: string; search?: string; page?: number; limit?: number }): Promise<PaginatedCallLogsResponse> {
+    getCallLogs(params?: { queue_id?: string; staff_id?: string; search?: string; page?: number; limit?: number; start_date?: string; end_date?: string }): Promise<PaginatedCallLogsResponse> {
         const queryParams = new URLSearchParams();
         if (params?.queue_id) queryParams.append("queue_id", params.queue_id);
         if (params?.staff_id) queryParams.append("staff_id", params.staff_id);
         if (params?.search) queryParams.append("search", params.search);
         if (params?.page) queryParams.append("page", params.page.toString());
         if (params?.limit) queryParams.append("limit", params.limit.toString());
+        if (params?.start_date) queryParams.append("start_date", params.start_date);
+        if (params?.end_date) queryParams.append("end_date", params.end_date);
         const q = queryParams.toString();
         return request<PaginatedCallLogsResponse>(`/calls/logs${q ? `?${q}` : ""}`);
     },
 
-    getCallLogsOverview(queue_id?: string): Promise<CallLogsOverviewResponse> {
-        const q = queue_id ? `?queue_id=${queue_id}` : "";
-        return request<CallLogsOverviewResponse>(`/calls/overview${q}`);
+    getCallLogsOverview(queue_id?: string, start_date?: string, end_date?: string): Promise<CallLogsOverviewResponse> {
+        const queryParams = new URLSearchParams();
+        if (queue_id) queryParams.append("queue_id", queue_id);
+        if (start_date) queryParams.append("start_date", start_date);
+        if (end_date) queryParams.append("end_date", end_date);
+        const q = queryParams.toString();
+        return request<CallLogsOverviewResponse>(`/calls/overview${q ? `?${q}` : ""}`);
+    },
+
+    async exportCallLogsCSV(params?: { queue_id?: string; search?: string; start_date?: string; end_date?: string }): Promise<Blob> {
+        const qs = new URLSearchParams();
+        if (params?.queue_id) qs.append("queue_id", params.queue_id);
+        if (params?.search) qs.append("search", params.search);
+        if (params?.start_date) qs.append("start_date", params.start_date);
+        if (params?.end_date) qs.append("end_date", params.end_date);
+        const q = qs.toString();
+
+        const url = `${config.apiBaseUrl}/calls/logs/export${q ? `?${q}` : ""}`;
+        const headers = new Headers();
+        const token = getToken();
+        if (token) headers.set("Authorization", `Bearer ${token}`);
+
+        const resp = await fetch(url, { headers });
+        if (!resp.ok) {
+            throw new Error("Failed to export call logs");
+        }
+        return await resp.blob();
     },
 
     login(data: LoginRequest): Promise<TokenResponse> {

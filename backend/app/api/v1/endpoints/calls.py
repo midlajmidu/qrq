@@ -1,6 +1,10 @@
 import uuid
+import csv
+import io
 from typing import Optional
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.deps import get_db
@@ -17,6 +21,9 @@ from app.services import call_log_service
 
 router = APIRouter()
 
+from sqlalchemy import select, desc, and_
+from datetime import datetime, timezone, timedelta
+
 @router.post("/save", response_model=CallLogRead)
 async def log_call(
     call_in: CallLogCreate,
@@ -24,26 +31,54 @@ async def log_call(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Log a completed WebRTC call.
+    Log a WebRTC call from the frontend client.
+    Reconciles with any authoritative Plivo webhook log created within the last 3 minutes.
     """
     org_id = call_in.organization_id or current_user.org_id
     if not org_id:
         raise HTTPException(status_code=400, detail="User does not belong to any organization")
 
-    call_log = CallLog(
-        organization_id=org_id,
-        queue_id=call_in.queue_id,
-        session_id=call_in.session_id,
-        token_id=call_in.token_id,
-        customer_name=call_in.customer_name,
-        customer_phone=call_in.customer_phone,
-        duration_seconds=call_in.duration_seconds,
-        called_by_id=current_user.id
+    # Check if a recent CallLog was already created by Plivo webhook
+    recent_cutoff = datetime.now(timezone.utc) - timedelta(minutes=3)
+    conditions = [
+        CallLog.organization_id == org_id,
+        CallLog.customer_phone == call_in.customer_phone,
+        CallLog.created_at >= recent_cutoff,
+    ]
+    if call_in.token_id:
+        conditions.append(CallLog.token_id == call_in.token_id)
+
+    res = await db.execute(
+        select(CallLog).where(and_(*conditions)).order_by(desc(CallLog.created_at)).limit(1)
     )
-    
-    db.add(call_log)
-    await db.commit()
-    await db.refresh(call_log)
+    existing_log = res.scalar_one_or_none()
+
+    if existing_log:
+        if not existing_log.called_by_id:
+            existing_log.called_by_id = current_user.id
+        if not existing_log.customer_name and call_in.customer_name:
+            existing_log.customer_name = call_in.customer_name
+        if call_in.queue_id and not existing_log.queue_id:
+            existing_log.queue_id = call_in.queue_id
+        await db.commit()
+        await db.refresh(existing_log)
+        call_log = existing_log
+    else:
+        call_log = CallLog(
+            organization_id=org_id,
+            queue_id=call_in.queue_id,
+            session_id=call_in.session_id,
+            token_id=call_in.token_id,
+            customer_name=call_in.customer_name,
+            customer_phone=call_in.customer_phone,
+            duration_seconds=call_in.duration_seconds,
+            ring_duration_seconds=call_in.ring_duration_seconds,
+            call_status=call_in.call_status or "no_answer",
+            called_by_id=current_user.id
+        )
+        db.add(call_log)
+        await db.commit()
+        await db.refresh(call_log)
 
     called_by_name = None
     if current_user:
@@ -60,6 +95,8 @@ async def log_call(
         customer_phone=call_log.customer_phone,
         duration_seconds=call_log.duration_seconds,
         billable_minutes=call_log_service.calculate_billable_minutes(call_log.duration_seconds),
+        call_status=call_log.call_status,
+        ring_duration_seconds=call_log.ring_duration_seconds,
         called_by_id=call_log.called_by_id,
         called_by_name=called_by_name,
         created_at=call_log.created_at,
@@ -70,6 +107,8 @@ async def get_call_logs(
     queue_id: Optional[uuid.UUID] = None,
     staff_id: Optional[uuid.UUID] = None,
     search: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -90,11 +129,15 @@ async def get_call_logs(
         queue_id=queue_id,
         staff_id=staff_id,
         search=search,
+        start_date=start_date,
+        end_date=end_date,
     )
 
 @router.get("/overview", response_model=CallLogsOverviewResponse)
 async def get_call_logs_overview(
     queue_id: Optional[uuid.UUID] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -109,4 +152,70 @@ async def get_call_logs_overview(
         db,
         org_id=org_id,
         queue_id=queue_id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+@router.get("/logs/export")
+async def export_call_logs_csv(
+    queue_id: Optional[uuid.UUID] = None,
+    staff_id: Optional[uuid.UUID] = None,
+    search: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Export call logs as CSV file.
+    """
+    org_id = current_user.org_id
+    if not org_id:
+        raise HTTPException(status_code=400, detail="User does not belong to any organization")
+
+    # Fetch all logs (no pagination for export)
+    result = await call_log_service.get_call_logs_paginated(
+        db,
+        org_id=org_id,
+        page=1,
+        limit=10000,
+        queue_id=queue_id,
+        staff_id=staff_id,
+        search=search,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Date & Time",
+        "Staff Caller",
+        "Customer Phone",
+        "Customer Name",
+        "Queue",
+        "Status",
+        "Duration (s)",
+        "Ring Time (s)",
+        "Billable (mins)",
+    ])
+
+    for item in result.items:
+        writer.writerow([
+            item.created_at.strftime("%Y-%m-%d %H:%M:%S") if item.created_at else "",
+            item.called_by_name or "Unknown",
+            item.customer_phone,
+            item.customer_name or "",
+            item.queue_name or "",
+            item.call_status,
+            item.duration_seconds,
+            item.ring_duration_seconds,
+            item.billable_minutes,
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=call_logs_export.csv"}
     )

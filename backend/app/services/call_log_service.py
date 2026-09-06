@@ -1,8 +1,8 @@
 import math
 import uuid
 from typing import Optional, List, Tuple
-from datetime import datetime
-from sqlalchemy import select, func, desc, or_
+from datetime import datetime, date, timedelta
+from sqlalchemy import select, func, desc, or_, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
@@ -30,6 +30,15 @@ def calculate_billable_minutes(duration_seconds: int) -> int:
     return math.ceil(duration_seconds / 60.0)
 
 
+def _apply_date_filters(query, start_date: Optional[date] = None, end_date: Optional[date] = None):
+    """Apply date range filtering to a CallLog query."""
+    if start_date:
+        query = query.where(cast(CallLog.created_at, Date) >= start_date)
+    if end_date:
+        query = query.where(cast(CallLog.created_at, Date) <= end_date)
+    return query
+
+
 async def get_call_logs_paginated(
     db: AsyncSession,
     *,
@@ -39,6 +48,8 @@ async def get_call_logs_paginated(
     queue_id: Optional[uuid.UUID] = None,
     staff_id: Optional[uuid.UUID] = None,
     search: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
 ) -> PaginatedCallLogsResponse:
     page = max(1, page)
     limit = max(1, min(100, limit))
@@ -60,6 +71,9 @@ async def get_call_logs_paginated(
                 CallLog.customer_name.ilike(search_pattern),
             )
         )
+
+    # Apply date range filters
+    query = _apply_date_filters(query, start_date, end_date)
 
     # Count total
     count_query = select(func.count()).select_from(query.subquery())
@@ -97,6 +111,8 @@ async def get_call_logs_paginated(
                 customer_phone=log.customer_phone,
                 duration_seconds=log.duration_seconds,
                 billable_minutes=calculate_billable_minutes(log.duration_seconds),
+                call_status=log.call_status,
+                ring_duration_seconds=log.ring_duration_seconds,
                 called_by_id=log.called_by_id,
                 called_by_name=called_by_name,
                 queue_name=queue_name,
@@ -120,10 +136,15 @@ async def get_call_logs_overview(
     *,
     org_id: uuid.UUID,
     queue_id: Optional[uuid.UUID] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
 ) -> CallLogsOverviewResponse:
     query = select(CallLog).where(CallLog.organization_id == org_id)
     if queue_id:
         query = query.where(CallLog.queue_id == queue_id)
+    
+    # Apply date range filters
+    query = _apply_date_filters(query, start_date, end_date)
 
     query = query.options(joinedload(CallLog.called_by))
     result = await db.execute(query)
@@ -132,8 +153,14 @@ async def get_call_logs_overview(
     total_calls = len(logs)
     total_duration_seconds = sum(l.duration_seconds for l in logs)
     total_billable_minutes = sum(calculate_billable_minutes(l.duration_seconds) for l in logs)
+
+    # P0: Calculate connection rate (% of calls that were answered/completed)
+    completed_calls = sum(1 for l in logs if getattr(l, 'call_status', 'completed') == 'completed')
+    connection_rate = round((completed_calls / total_calls) * 100, 1) if total_calls > 0 else 0.0
+
+    # Industry standard: Average Talk Time (ATT) for answered calls
     avg_duration_seconds = (
-        round(total_duration_seconds / total_calls, 1) if total_calls > 0 else 0.0
+        round(total_duration_seconds / completed_calls, 1) if completed_calls > 0 else 0.0
     )
 
     # Group by staff
@@ -166,5 +193,6 @@ async def get_call_logs_overview(
         total_duration_seconds=total_duration_seconds,
         total_billable_minutes=total_billable_minutes,
         avg_duration_seconds=avg_duration_seconds,
+        connection_rate=connection_rate,
         staff_stats=staff_stats,
     )

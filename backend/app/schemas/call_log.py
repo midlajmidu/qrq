@@ -14,6 +14,8 @@ class CallLogBase(BaseModel):
 
 class CallLogCreate(CallLogBase):
     organization_id: Optional[uuid.UUID] = None
+    call_status: str = "completed"
+    ring_duration_seconds: int = 0
 
 class CallLogRead(CallLogBase):
     id: uuid.UUID
@@ -22,6 +24,8 @@ class CallLogRead(CallLogBase):
     called_by_name: Optional[str] = None
     queue_name: Optional[str] = None
     billable_minutes: int = 0
+    call_status: str = "completed"
+    ring_duration_seconds: int = 0
     created_at: datetime
 
     class Config:
@@ -39,6 +43,7 @@ class CallLogsOverviewResponse(BaseModel):
     total_duration_seconds: int
     total_billable_minutes: int
     avg_duration_seconds: float
+    connection_rate: float = 0.0
     staff_stats: List[StaffCallStat] = []
 
 class PaginatedCallLogsResponse(BaseModel):

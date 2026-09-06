@@ -8,7 +8,7 @@ export default function CommunicationDashboardPage() {
     const [channel, setChannel] = useState<"whatsapp" | "calls">("whatsapp");
 
     return (
-        <div className="w-full max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-300">
+        <div className="w-full animate-in fade-in duration-300">
             {channel === "whatsapp" ? (
                 <WhatsAppPortal channel={channel} onChannelChange={setChannel} />
             ) : (

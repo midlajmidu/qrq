@@ -1206,6 +1206,8 @@ export interface CallLogItem {
     customer_phone: string;
     duration_seconds: number;
     billable_minutes: number;
+    call_status: string;
+    ring_duration_seconds: number;
     called_by_id?: string | null;
     called_by_name?: string | null;
     queue_name?: string | null;
@@ -1225,6 +1227,7 @@ export interface CallLogsOverviewResponse {
     total_duration_seconds: number;
     total_billable_minutes: number;
     avg_duration_seconds: number;
+    connection_rate: number;
     staff_stats: StaffCallStat[];
 }
 

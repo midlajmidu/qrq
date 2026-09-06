@@ -53,14 +53,44 @@ export default function WebRTCCallModal({
 
     const hasLoggedRef = useRef<boolean>(false);
     const callStartTimeRef = useRef<number>(0);
+    const isCalleeAnsweredRef = useRef<boolean>(false);
+    const calleeAnswerTimeRef = useRef<number>(0);
+    const lastFailureCauseRef = useRef<string | null>(null);
 
     const saveCallRecord = useCallback(async () => {
         if (hasLoggedRef.current) return;
         hasLoggedRef.current = true;
 
-        let duration = durationRef.current;
-        if (duration === 0 && callStartTimeRef.current > 0) {
-            duration = Math.max(1, Math.round((Date.now() - callStartTimeRef.current) / 1000));
+        const isAnswered = isCalleeAnsweredRef.current;
+        let duration = 0;
+        let ringDuration = 0;
+        let call_status = "no_answer";
+
+        const now = Date.now();
+        if (isAnswered) {
+            duration = durationRef.current;
+            if (duration === 0 && calleeAnswerTimeRef.current > 0) {
+                duration = Math.max(1, Math.round((now - calleeAnswerTimeRef.current) / 1000));
+            }
+            ringDuration = calleeAnswerTimeRef.current > callStartTimeRef.current 
+                ? Math.max(0, Math.round((calleeAnswerTimeRef.current - callStartTimeRef.current) / 1000))
+                : 0;
+            call_status = "completed";
+        } else {
+            duration = 0;
+            ringDuration = callStartTimeRef.current > 0 
+                ? Math.max(0, Math.round((now - callStartTimeRef.current) / 1000))
+                : 0;
+
+            if (lastFailureCauseRef.current) {
+                const c = lastFailureCauseRef.current.toLowerCase();
+                if (c.includes("busy")) call_status = "busy";
+                else if (c.includes("no answer") || c.includes("timeout")) call_status = "no_answer";
+                else call_status = "failed";
+            } else {
+                // Agent hung up while callee was ringing
+                call_status = ringDuration < 5 ? "cancelled" : "no_answer";
+            }
         }
 
         try {
@@ -72,8 +102,10 @@ export default function WebRTCCallModal({
                 customer_name: customerName || undefined,
                 customer_phone: customerPhone,
                 duration_seconds: duration,
+                ring_duration_seconds: ringDuration,
+                call_status,
             });
-            console.log("Call logged successfully, duration_seconds:", duration);
+            console.log("Call logged successfully:", { duration_seconds: duration, ring_duration_seconds: ringDuration, call_status });
         } catch (err) {
             console.error("Failed to log call record:", err);
         }
@@ -97,6 +129,7 @@ export default function WebRTCCallModal({
                 client.removeAllListeners('onLoginFailed');
                 client.removeAllListeners('onCallRemoteRinging');
                 client.removeAllListeners('onCallAnswered');
+                client.removeAllListeners('onMediaConnected');
                 client.removeAllListeners('onCallFailed');
                 client.removeAllListeners('onCallTerminated');
 
@@ -131,6 +164,9 @@ export default function WebRTCCallModal({
         setCallDuration(0);
         durationRef.current = 0;
         callStartTimeRef.current = 0;
+        isCalleeAnsweredRef.current = false;
+        calleeAnswerTimeRef.current = 0;
+        lastFailureCauseRef.current = null;
         setStatus("Disconnected");
 
         onClose();
@@ -142,12 +178,21 @@ export default function WebRTCCallModal({
     const toggleMute = () => {
         if (!plivoClientRef.current) return;
         try {
-            if (isMuted) {
-                plivoClientRef.current.unmute?.();
-                setIsMuted(false);
-            } else {
-                plivoClientRef.current.mute?.();
+            const nextMuted = !isMuted;
+            if (nextMuted) {
+                if (typeof plivoClientRef.current.mute === "function") {
+                    plivoClientRef.current.mute();
+                } else if (typeof plivoClientRef.current.callSession?.mute === "function") {
+                    plivoClientRef.current.callSession.mute();
+                }
                 setIsMuted(true);
+            } else {
+                if (typeof plivoClientRef.current.unmute === "function") {
+                    plivoClientRef.current.unmute();
+                } else if (typeof plivoClientRef.current.callSession?.unmute === "function") {
+                    plivoClientRef.current.callSession.unmute();
+                }
+                setIsMuted(false);
             }
         } catch (e) {
             console.warn("Mute error:", e);
@@ -183,7 +228,43 @@ export default function WebRTCCallModal({
                 setTimeout(() => cleanupCall(), 1200);
             }
         };
+
+        const markCallConnected = (callInfo?: any) => {
+            if (isCalleeAnsweredRef.current) return;
+            console.log("Plivo WebRTC: Remote call answered by callee!", callInfo);
+            isCalleeAnsweredRef.current = true;
+            calleeAnswerTimeRef.current = Date.now();
+            setStatus("Connected");
+            setIsConnected(true);
+
+            if (timerRef.current) clearInterval(timerRef.current);
+            durationRef.current = 0;
+            setCallDuration(0);
+            timerRef.current = setInterval(() => {
+                durationRef.current += 1;
+                setCallDuration(durationRef.current);
+            }, 1000);
+
+            if (isMuted) {
+                try {
+                    if (typeof plivoClientRef.current?.mute === "function") {
+                        plivoClientRef.current.mute();
+                    } else if (typeof plivoClientRef.current?.callSession?.mute === "function") {
+                        plivoClientRef.current.callSession.mute();
+                    }
+                } catch {}
+            }
+        };
+
+        const handleCalleeAnswered = (e: CustomEvent) => {
+            const payload = e.detail;
+            if (payload && payload.customer_phone === customerPhone) {
+                markCallConnected(payload);
+            }
+        };
+
         window.addEventListener("plivo_call_hung_up", handleHungUp as any);
+        window.addEventListener("plivo_call_answered", handleCalleeAnswered as any);
 
         hasLoggedRef.current = false;
         setIsConnected(false);
@@ -218,6 +299,8 @@ export default function WebRTCCallModal({
 
                     setStatus("Dialing");
                     callStartTimeRef.current = Date.now();
+                    isCalleeAnsweredRef.current = false;
+                    calleeAnswerTimeRef.current = 0;
                     client.call(customerPhone, {
                         extraHeaders: {
                             'X-PH-OrgId': organizationId || queueId || "00000000-0000-0000-0000-000000000000",
@@ -236,19 +319,16 @@ export default function WebRTCCallModal({
                     setStatus("Ringing");
                 });
 
-                client.on('onCallAnswered', () => {
-                    setStatus("Connected");
-                    setIsConnected(true);
-                    callStartTimeRef.current = Date.now();
+                client.on('onCallAnswered', (callInfo: any) => {
+                    markCallConnected(callInfo);
+                });
 
-                    if (timerRef.current) clearInterval(timerRef.current);
-                    timerRef.current = setInterval(() => {
-                        durationRef.current += 1;
-                        setCallDuration(durationRef.current);
-                    }, 1000);
+                client.on('onMediaConnected', (callInfo: any) => {
+                    markCallConnected(callInfo);
                 });
 
                 client.on('onCallFailed', (cause: any) => {
+                    lastFailureCauseRef.current = String(cause || '');
                     setStatus(`Failed: ${cause}`);
                     setTimeout(() => cleanupCall(), 1800);
                 });
@@ -262,6 +342,8 @@ export default function WebRTCCallModal({
                     isCallingRef.current = true;
                     setStatus("Dialing");
                     callStartTimeRef.current = Date.now();
+                    isCalleeAnsweredRef.current = false;
+                    calleeAnswerTimeRef.current = 0;
                     client.call(customerPhone, {
                         extraHeaders: {
                             'X-PH-OrgId': organizationId || queueId || "00000000-0000-0000-0000-000000000000",
@@ -293,6 +375,7 @@ export default function WebRTCCallModal({
 
         return () => {
             window.removeEventListener("plivo_call_hung_up", handleHungUp as any);
+            window.removeEventListener("plivo_call_answered", handleCalleeAnswered as any);
             if (timerRef.current) clearInterval(timerRef.current);
             if (plivoClientRef.current) {
                 const client = plivoClientRef.current;
@@ -301,6 +384,7 @@ export default function WebRTCCallModal({
                     client.removeAllListeners('onLoginFailed');
                     client.removeAllListeners('onCallRemoteRinging');
                     client.removeAllListeners('onCallAnswered');
+                    client.removeAllListeners('onMediaConnected');
                     client.removeAllListeners('onCallFailed');
                     client.removeAllListeners('onCallTerminated');
                 } catch (e) { }
@@ -322,6 +406,7 @@ export default function WebRTCCallModal({
     const isRinging = status.toLowerCase().includes("ringing");
     const isDialing = status.toLowerCase().includes("dialing") || status.toLowerCase().includes("connecting");
     const isFailed = status.toLowerCase().includes("failed") || status.toLowerCase().includes("error");
+    const isCallActive = isConnected || isRinging || isDialing;
 
     const statusLabel = isConnected
         ? "Connected"
@@ -418,15 +503,27 @@ export default function WebRTCCallModal({
                         </div>
                     ) : (
                         <div className="flex flex-col items-center py-4">
-                            {/* Timer */}
-                            <div className="text-3xl font-mono tabular-nums text-white font-medium">
-                                {formatDuration(callDuration)}
-                            </div>
-
-                            {/* Status subtext */}
-                            <div className="text-xs uppercase tracking-wider text-zinc-500 mt-1.5">
-                                {statusSubtext}
-                            </div>
+                            {isConnected ? (
+                                <>
+                                    {/* Timer */}
+                                    <div className="text-3xl font-mono tabular-nums text-white font-medium">
+                                        {formatDuration(callDuration)}
+                                    </div>
+                                    {/* Status subtext */}
+                                    <div className="text-xs uppercase tracking-wider text-emerald-400 mt-1.5 font-medium">
+                                        Connected
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="text-xl font-medium text-zinc-300 animate-pulse">
+                                        {isRinging ? "Ringing..." : isDialing ? "Calling..." : status}
+                                    </div>
+                                    <div className="text-xs uppercase tracking-wider text-zinc-500 mt-1.5">
+                                        Waiting for answer
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
@@ -437,7 +534,7 @@ export default function WebRTCCallModal({
                     <div className="flex flex-col items-center gap-1.5">
                         <button
                             onClick={toggleMute}
-                            disabled={!isConnected}
+                            disabled={!isCallActive}
                             title={isMuted ? "Unmute" : "Mute"}
                             className={`w-14 h-14 rounded-full flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
                                 isMuted
