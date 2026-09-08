@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen relative flex items-center justify-center bg-hero-glow overflow-hidden px-6 py-16">
+    <main suppressHydrationWarning className="min-h-screen relative flex items-center justify-center bg-hero-glow overflow-hidden px-6 py-16">
       {/* Decorative grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(220_16%_90%/0.5)_1px,transparent_1px),linear-gradient(to_bottom,hsl(220_16%_90%/0.5)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black_70%,transparent_100%)]" />
 

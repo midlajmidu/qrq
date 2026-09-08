@@ -31,6 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head suppressHydrationWarning />
       <body className={`${inter.className} ${inter.variable} bg-slate-50 text-slate-900 antialiased`} suppressHydrationWarning>
         <ClientProviders>
           <div className="flex flex-col">

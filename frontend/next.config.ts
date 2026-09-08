@@ -5,11 +5,11 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   async rewrites() {
-    // Priority: 1. BACKEND_URL, 2. NEXT_PUBLIC_API_URL, 3. NEXT_PUBLIC_API_BASE_URL, 4. Docker Internal Fallback
-    const backendUrl = process.env.BACKEND_URL ||
-      process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") ||
-      process.env.NEXT_PUBLIC_API_BASE_URL?.replace("/api/v1", "") ||
-      "http://backend:8000";
+    // Priority: 1. BACKEND_URL, 2. NEXT_PUBLIC_API_URL/BASE_URL (if full URL), 3. Local/Docker fallback
+    const defaultBackend = process.env.NODE_ENV === "production" ? "http://backend:8000" : "http://127.0.0.1:8000";
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
+    const apiUrlBase = rawApiUrl && rawApiUrl.startsWith("http") ? rawApiUrl.replace(/\/api\/v1\/?$/, "") : undefined;
+    const backendUrl = process.env.BACKEND_URL || apiUrlBase || defaultBackend;
 
     return [
       {

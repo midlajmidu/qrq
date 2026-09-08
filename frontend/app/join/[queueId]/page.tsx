@@ -174,6 +174,8 @@ export default function JoinQueuePage({ params }: PageProps) {
             setError("This QR code has expired or is no longer valid. Please scan today's active QR code on the display screen.");
         } else if (errorParam === "inactive") {
             setError("This queue is currently inactive or closed. Please ask staff for assistance.");
+        } else if (errorParam === "backend_unreachable") {
+            setError("Unable to reach the queue server. Please ensure you are connected to the network or try scanning again.");
         }
 
         const token = searchParams.get("qrToken");
